@@ -6,6 +6,9 @@ import { processos } from './routes/processos';
 import { movimentacoes } from './routes/movimentacoes';
 import { prazos } from './routes/prazos';
 import { dashboard } from './routes/dashboard';
+import { documentos } from './routes/documentos';
+import { tarefas } from './routes/tarefas';
+import { jobs } from './routes/jobs';
 
 export type Env = { DB: D1Database; DOCS: R2Bucket; ALLOWED_ORIGIN: string };
 const app = new Hono<{ Bindings: Env }>();
@@ -20,6 +23,10 @@ app.route('/api/processos', processos as never);
 app.route('/api/movimentacoes', movimentacoes as never);
 app.route('/api/prazos', prazos as never);
 app.route('/api/dashboard', dashboard as never);
+app.route('/api/documentos', documentos as never);
+app.route('/api/processos-docs', documentos as never);
+app.route('/api/tarefas', tarefas as never);
+app.route('/api/jobs', jobs as never);
 app.post('/api/login', async (c) => {
   try {
     const { email, pass } = await c.req.json() as { email: string; pass: string };
