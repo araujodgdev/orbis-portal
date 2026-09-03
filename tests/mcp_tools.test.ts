@@ -99,3 +99,132 @@ describe('MCP write tools', () => {
     expect(json.result?.tools.length).toBe(16);
   });
 });
+
+describe('MCP final review wave', () => {
+  function makeCaptureDb(opts: {
+    cliente?: unknown; processo?: unknown; movs?: unknown[]; prazos?: unknown[];
+    docs?: unknown[]; processos?: unknown[]; clientes?: unknown[];
+    count?: number; auditThrows?: boolean;
+  } = {}) {
+    const seen: { sql: string; args: unknown[] }[] = [];
+    const all = async (sql: string) => {
+      if (/FROM movimentacoes/.test(sql)) return { results: opts.movs ?? [] };
+      if (/FROM prazos/.test(sql)) return { results: opts.prazos ?? [] };
+      if (/FROM documentos/.test(sql)) return { results: opts.docs ?? [] };
+      if (/FROM processos/.test(sql)) return { results: opts.processos ?? [] };
+      if (/FROM clientes/.test(sql)) return { results: opts.clientes ?? [] };
+      return { results: [] };
+    };
+    const db = {
+      prepare: (sql: string) => ({
+        bind: (...args: unknown[]) => {
+          seen.push({ sql, args });
+          return {
+            first: async () => {
+              if (/FROM api_tokens/.test(sql)) return { user_id: 'u1' };
+              if (/COUNT\(\*\)/.test(sql)) return { n: opts.count ?? 0 };
+              if (/FROM clientes/.test(sql)) return opts.cliente ?? null;
+              if (/FROM processos/.test(sql)) return opts.processo ?? null;
+              return null;
+            },
+            all: () => all(sql),
+            run: async () => {
+              if (/INSERT INTO audit_logs/.test(sql) && opts.auditThrows) throw new Error('D1 caiu');
+              return { success: true };
+            },
+          };
+        },
+      }),
+    };
+    return { db: db as never, seen };
+  }
+
+  async function call(db: never, name: string, args: unknown, id = 1) {
+    return rpc(db, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+  }
+
+  it('list_prazos with no filters returns rows (empty-bind path)', async () => {
+    const { db, seen } = makeCaptureDb({ prazos: [{ id: 'prz_1' }] });
+    const { json } = await call(db, 'list_prazos', {});
+    expect(json.result.isError).not.toBe(true);
+    expect(json.result.content[0].text as string).toContain('prz_1');
+    const sel = seen.find((s) => /SELECT \* FROM prazos/.test(s.sql));
+    expect(sel?.args.length).toBe(0);
+  });
+
+  it('get_processo unknown id returns readable error', async () => {
+    const { db } = makeCaptureDb();
+    const { json } = await call(db, 'get_processo', { id: 'missing_1' });
+    expect(json.result.isError).toBe(true);
+    expect(json.result.content[0].text as string).toMatch(/não encontrado/i);
+  });
+
+  it('get_processo returns ficha completa (data + movimentacoes + prazos + documentos)', async () => {
+    const { db } = makeCaptureDb({
+      processo: { id: 'pro_1' }, movs: [{ id: 'mov_1' }], prazos: [{ id: 'prz_1' }], docs: [{ id: 'doc_1' }],
+    });
+    const { json } = await call(db, 'get_processo', { id: 'pro_1' });
+    expect(json.result.isError).not.toBe(true);
+    const body = JSON.parse(json.result.content[0].text as string) as Record<string, unknown>;
+    expect((body.data as { id: string }).id).toBe('pro_1');
+    expect(body.movimentacoes).toEqual([{ id: 'mov_1' }]);
+    expect(body.prazos).toEqual([{ id: 'prz_1' }]);
+    expect(body.documentos).toEqual([{ id: 'doc_1' }]);
+  });
+
+  it('search_clientes filters by cnpj with digit normalization', async () => {
+    const { db, seen } = makeCaptureDb({ clientes: [{ id: 'cli_1' }] });
+    const { json } = await call(db, 'search_clientes', { cnpj: '12.345.678/0001-90' });
+    expect(json.result.isError).not.toBe(true);
+    expect(json.result.content[0].text as string).toContain('cli_1');
+    const sel = seen.find((s) => /SELECT \* FROM clientes/.test(s.sql));
+    expect(sel?.sql).toContain('cpf_cnpj');
+    expect(sel?.args).toContain('%12.345.678/0001-90%');
+    expect(sel?.args).toContain('%12345678000190%');
+  });
+
+  it('search_processos escapes LIKE wildcards', async () => {
+    const { db, seen } = makeCaptureDb({ processos: [] });
+    await call(db, 'search_processos', { q: '100%_x' });
+    const sel = seen.find((s) => /FROM processos p JOIN/.test(s.sql));
+    expect(sel?.sql).toContain(`ESCAPE '\\'`);
+    expect(sel?.args).toEqual(['%100\\%\\_x%', '%100\\%\\_x%']);
+  });
+
+  it('update_cliente/update_processo/update_tarefa with empty body return readable error', async () => {
+    const { db } = makeCaptureDb({ cliente: { id: 'cli_1' }, processo: { id: 'pro_1' } });
+    for (const [name, args] of [
+      ['update_cliente', { id: 'cli_1' }],
+      ['update_processo', { id: 'pro_1' }],
+      ['update_tarefa', { id: 'tar_1' }],
+    ] as const) {
+      const { json } = await call(db, name, args);
+      expect(json.result.isError).toBe(true);
+      expect(json.result.content[0].text as string).toMatch(/nada para atualizar/i);
+    }
+  });
+
+  it('delete_cliente success path', async () => {
+    const { db, seen } = makeCaptureDb({ cliente: { id: 'cli_1' }, count: 0 });
+    const { json } = await call(db, 'delete_cliente', { id: 'cli_1' });
+    expect(json.result.isError).not.toBe(true);
+    expect(JSON.parse(json.result.content[0].text as string)).toEqual({ ok: true });
+    expect(seen.some((s) => /DELETE FROM clientes/.test(s.sql))).toBe(true);
+  });
+
+  it('tools/call writes audit_logs with mcp.<tool> action and {tool, args} meta', async () => {
+    const { db, seen } = makeCaptureDb({ processos: [] });
+    await call(db, 'search_processos', { q: '0000' });
+    const ins = seen.find((s) => /INSERT INTO audit_logs/.test(s.sql));
+    expect(ins).toBeDefined();
+    expect(ins?.args[2]).toBe('mcp.search_processos');
+    expect(JSON.parse(String(ins?.args[5]))).toEqual({ tool: 'search_processos', args: { q: '0000' } });
+  });
+
+  it('audit failure still returns success', async () => {
+    const { db } = makeCaptureDb({ cliente: { id: 'cli_1', nome: 'Ada' }, auditThrows: true });
+    const { json } = await call(db, 'get_cliente', { id: 'cli_1' });
+    expect(json.result.isError).not.toBe(true);
+    expect(json.result.content[0].text as string).toContain('cli_1');
+  });
+});

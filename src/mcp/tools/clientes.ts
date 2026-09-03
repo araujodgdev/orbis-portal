@@ -17,12 +17,30 @@ function parseOrThrow<T>(run: () => T): T {
 }
 
 export function registerClientes(server: McpServer, ctx: ToolCtx): void {
-  tool(server, ctx, 'search_clientes', 'Busca clientes por nome', {
+  tool(server, ctx, 'search_clientes', 'Busca clientes por nome, cpf ou cnpj', {
     q: z.string().optional(),
+    cpf: z.string().optional(),
+    cnpj: z.string().optional(),
   }, async (args) => {
     const conds: string[] = [];
     const bind: string[] = [];
     if (args.q) { conds.push(`nome LIKE ?`); bind.push(`%${args.q}%`); }
+    const docs = [args.cpf, args.cnpj].map((v) => String(v ?? '').trim()).filter((v) => v.length > 0);
+    if (docs.length > 0) {
+      // Compara o texto como digitado e, quando houver máscara, também só os
+      // dígitos — "12345678000190" encontra "12.345.678/0001-90".
+      const parts: string[] = [];
+      for (const d of docs) {
+        parts.push(`cpf_cnpj LIKE ?`);
+        bind.push(`%${d}%`);
+        const digits = d.replace(/\D/g, '');
+        if (digits && digits !== d) {
+          parts.push(`REPLACE(REPLACE(REPLACE(cpf_cnpj, '.', ''), '-', ''), '/', '') LIKE ?`);
+          bind.push(`%${digits}%`);
+        }
+      }
+      conds.push(`(${parts.join(' OR ')})`);
+    }
     const stmt = ctx.db.prepare(
       `SELECT * FROM clientes ${conds.length > 0 ? `WHERE ${conds.join(' AND ')}` : ''} ORDER BY nome LIMIT 100`
     );

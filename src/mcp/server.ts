@@ -20,7 +20,12 @@ export function tool(
   server.registerTool(name, { description, inputSchema: shape }, async (args) => {
     try {
       const data = await run(args as Record<string, unknown>);
-      await audit(ctx.db, ctx.userId, `mcp.${name}`, 'mcp', name, {});
+      try {
+        await audit(ctx.db, ctx.userId, `mcp.${name}`, 'mcp', name, { tool: name, args });
+      } catch {
+        // Auditoria é best-effort: falhar aqui não pode transformar um
+        // sucesso em erro (o cliente MCP repetiria a chamada e duplicaria a escrita).
+      }
       return { content: [{ type: 'text' as const, text: JSON.stringify(data) }] };
     } catch (e) {
       return { content: [{ type: 'text' as const, text: e instanceof Error ? e.message : String(e) }], isError: true };

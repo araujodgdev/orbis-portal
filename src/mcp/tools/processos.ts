@@ -28,7 +28,7 @@ export function registerProcessos(server: McpServer, ctx: ToolCtx): void {
   }, async (args) => {
     let sql = `SELECT p.*, cl.nome AS cliente_nome FROM processos p JOIN clientes cl ON cl.id = p.cliente_id WHERE 1=1`;
     const bind: string[] = [];
-    if (args.q) { sql += ` AND (p.numero_cnj LIKE ? OR cl.nome LIKE ?)`; bind.push(`%${args.q}%`, `%${args.q}%`); }
+    if (args.q) { const qEsc = String(args.q).replace(/[%_\\]/g, (m) => '\\' + m); sql += ` AND (p.numero_cnj LIKE ? ESCAPE '\\' OR cl.nome LIKE ? ESCAPE '\\')`; bind.push(`%${qEsc}%`, `%${qEsc}%`); }
     if (args.status) { sql += ` AND p.status = ?`; bind.push(String(args.status)); }
     if (args.fase) { sql += ` AND p.fase = ?`; bind.push(String(args.fase)); }
     sql += ` ORDER BY p.created_at DESC LIMIT 100`;
@@ -39,9 +39,13 @@ export function registerProcessos(server: McpServer, ctx: ToolCtx): void {
   tool(server, ctx, 'get_processo', 'Ficha completa do processo', {
     id: z.string(),
   }, async (args) => {
-    const p = await ctx.db.prepare(`SELECT * FROM processos WHERE id = ?`).bind(String(args.id)).first();
+    const id = String(args.id);
+    const p = await ctx.db.prepare(`SELECT * FROM processos WHERE id = ?`).bind(id).first();
     if (!p) throw new Error('Processo não encontrado.');
-    return p;
+    const movs = await ctx.db.prepare(`SELECT * FROM movimentacoes WHERE processo_id = ? ORDER BY data DESC LIMIT 100`).bind(id).all();
+    const prz = await ctx.db.prepare(`SELECT * FROM prazos WHERE processo_id = ? ORDER BY data ASC LIMIT 100`).bind(id).all();
+    const docs = await ctx.db.prepare(`SELECT id, titulo, rascunho, created_at FROM documentos WHERE processo_id = ? ORDER BY created_at DESC LIMIT 100`).bind(id).all();
+    return { data: p, movimentacoes: movs.results, prazos: prz.results, documentos: docs.results };
   });
 
   tool(server, ctx, 'create_processo', 'Cadastra processo com CNJ e vínculo ao cliente', processoSchema.shape, async (args) => {
