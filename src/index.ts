@@ -12,7 +12,7 @@ import { jobs } from './routes/jobs';
 import { noticias } from './routes/noticias';
 import { csvImport } from './routes/csv';
 
-export type Env = { DB: D1Database; DOCS: R2Bucket; ALLOWED_ORIGIN: string };
+export type Env = { DB: D1Database; DOCS: R2Bucket; ALLOWED_ORIGIN: string; ASSETS: { fetch: typeof fetch } };
 const app = new Hono<{ Bindings: Env }>();
 
 app.get('/api/health', (c) => {
@@ -42,10 +42,12 @@ app.post('/api/login', async (c) => {
     const exp = new Date(Date.now() + 12 * 3600e3).toISOString();
     await c.env.DB.prepare(`INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)`).bind(sid, u.id, exp).run();
     await audit(c.env.DB, u.id, 'login', 'session', sid);
+    // Secure só sob https (prod); em http local o navegador descartaria o cookie e o login nunca grudaria.
+    const secure = new URL(c.req.url).protocol === 'https:' ? '; Secure' : '';
     return new Response(JSON.stringify({ ok: true }), {
       headers: {
         'content-type': 'application/json',
-        'set-cookie': `orbis_session=${sid}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=43200`,
+        'set-cookie': `orbis_session=${sid}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=43200`,
       },
     });
   } catch (e) { return err(e, 'login_failed', 500); }
@@ -56,8 +58,19 @@ app.post('/api/logout', async (c) => {
   return c.json({ ok: true });
 });
 
-app.onError((e) => {
-  const requestId = reqId();
+// SPA fallback: /api/* desconhecido continua 404 JSON; qualquer outra rota
+// serve o index.html (cobre o `wrangler dev` local, onde o not_found_handling
+// do assets nem sempre é aplicado).
+app.notFound((c) => {
+  if (c.req.path.startsWith('/api/')) {
+    return Response.json({ error: 'not_found', code: 'not_found', requestId: reqId() }, { status: 404 });
+  }
+  const assets = (c.env as Partial<Env>).ASSETS;
+  if (!assets) return c.text('Not Found', 404);
+  return assets.fetch(new Request(new URL('/index.html', c.req.url)));
+});
+
+app.onError((e) => {  const requestId = reqId();
   console.error(JSON.stringify({ requestId, code: 'unhandled', detail: String(e) }));
   return Response.json({ error: 'internal', code: 'internal', requestId }, { status: 500 });
 });

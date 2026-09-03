@@ -1,6 +1,9 @@
 -- Seed demo — DEV/LOCAL ONLY. Never apply to the prod database.
 -- Run once against a fresh local D1 (see README_DEPLOY.md step 5):
 --   npm run db:migrate && npm run db:seed
+-- Demo login: demo@escritorio.test / demo123 (pass_hash = sha256("orbis:demo123")).
+INSERT INTO users (id, email, pass_hash, role) VALUES
+  ('demo_usr_01', 'demo@escritorio.test', '7c300cf19ada734f25b20ad5aedf66c5cf6ee4909a56d28b1abfb92cdd705c84', 'escritorio');
 -- Fixed demo_* ids on purpose: a second run fails on PRIMARY KEY,
 -- which is the guardrail against accidental double-seeding.
 INSERT INTO clientes (id, nome, contato) VALUES

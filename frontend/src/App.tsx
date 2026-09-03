@@ -4,6 +4,7 @@ import { FichaProcesso } from './pages/FichaProcesso';
 import { Processos } from './pages/Processos';
 import { Clientes } from './pages/Clientes';
 import { Noticias } from './pages/Noticias';
+import { Login } from './pages/Login';
 
 const NAV = [
   { href: '/', label: 'Início' },
@@ -19,6 +20,7 @@ function isActive(path: string, href: string, onFicha: boolean): boolean {
 
 export function App() {
   const path = window.location.pathname;
+  if (path === '/login') return <Login />;
   const m = path.match(/^\/processos\/([^/]+)/);
   const page = m
     ? <FichaProcesso id={decodeURIComponent(m[1])} />
