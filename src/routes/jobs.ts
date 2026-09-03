@@ -16,7 +16,7 @@ jobs.post('/', async (c) => {
     await c.env.DB.prepare(`INSERT INTO jobs (id, tipo, payload_json, status) VALUES (?, ?, ?, 'queued')`)
       .bind(id, body.tipo, JSON.stringify(body.payload)).run();
     return c.json({ data: { id, status: 'queued' } }, 201);
-  } catch (e) { return err(e, 'invalid_job', 400); }
+  } catch (e) { return err(e); }
 });
 
 jobs.patch('/:id', async (c) => {

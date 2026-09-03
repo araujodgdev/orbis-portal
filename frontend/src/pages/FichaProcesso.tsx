@@ -56,7 +56,14 @@ const timelineDotStyle: CSSProperties = {
 
 export function FichaProcesso({ id }: { id: string }) {
   const [d, setD] = useState<null | Ficha>(null);
-  useEffect(() => { api(`/api/processos/${id}`).then(setD as never).catch(() => setD(null)); }, [id]);
+  const [error, setError] = useState('');
+  useEffect(() => { api(`/api/processos/${id}`).then(setD as never).catch((e) => setError(String(e))); }, [id]);
+  if (error) return (
+    <main style={{ padding: 16, fontFamily: sans, color: ink }}>
+      <p>Erro ao carregar ficha: {error}</p>
+      <p><a href="/processos" style={{ color: brand }}>Voltar para processos</a></p>
+    </main>
+  );
   if (!d) return <p style={{ fontFamily: sans, color: ink }}>Carregando ficha…</p>;
   return (
     <main style={{ padding: '20px 16px 96px', maxWidth: 680, margin: '0 auto', background: paper, minHeight: '100vh', fontFamily: sans }}>

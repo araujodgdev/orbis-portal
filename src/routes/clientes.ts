@@ -26,7 +26,10 @@ clientes.post('/', async (c) => {
       .bind(id, body.nome, body.contato, body.honorario_status).run();
     await audit(c.env.DB, 'portal', 'create', 'cliente', id);
     return c.json({ data: { id, ...body } }, 201);
-  } catch (e) { return err(e, 'invalid_cliente', 400); }
+  } catch (e) {
+    if (e instanceof z.ZodError) return err(e, 'invalid_cliente', 400);
+    return err(e);
+  }
 });
 
 clientes.get('/:id', async (c) => {

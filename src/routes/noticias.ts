@@ -31,5 +31,8 @@ noticias.post('/', async (c) => {
       .bind(id, body.titulo, body.link, body.resumo, body.area, body.fonte).run();
     await audit(c.env.DB, 'portal', 'create', 'noticia', id);
     return c.json({ data: { id, ...body } }, 201);
-  } catch (e) { return err(e, 'invalid_noticia', 400); }
+  } catch (e) {
+    if (e instanceof z.ZodError) return err(e, 'invalid_noticia', 400);
+    return err(e);
+  }
 });

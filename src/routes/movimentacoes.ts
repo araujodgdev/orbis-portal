@@ -29,5 +29,8 @@ movimentacoes.post('/processo/:pid', async (c) => {
       .bind(id, c.req.param('pid'), body.data, body.texto).run();
     await audit(c.env.DB, 'portal', 'create', 'movimentacao', id);
     return c.json({ data: { id, ...body } }, 201);
-  } catch (e) { return err(e, 'invalid_movimentacao', 400); }
+  } catch (e) {
+    if (e instanceof z.ZodError) return err(e, 'invalid_movimentacao', 400);
+    return err(e);
+  }
 });

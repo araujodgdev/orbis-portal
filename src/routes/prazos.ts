@@ -2,10 +2,11 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { audit } from '../lib/auth';
 import { err } from '../lib/errors';
+import { isDateYYYYMMDD } from '../lib/validate';
 import type { Env } from '../index';
 
 export const prazos = new Hono<{ Bindings: Env }>();
-const schema = z.object({ data: z.string().min(8).max(10), tipo: z.string().max(40).default('manifestacao') });
+const schema = z.object({ data: z.string().refine(isDateYYYYMMDD, 'Data inválida. Use AAAA-MM-DD'), tipo: z.string().max(40).default('manifestacao') });
 
 prazos.post('/processo/:pid', async (c) => {
   try {
@@ -15,7 +16,10 @@ prazos.post('/processo/:pid', async (c) => {
       .bind(id, c.req.param('pid'), body.data, body.tipo).run();
     await audit(c.env.DB, 'portal', 'create', 'prazo', id);
     return c.json({ data: { id, ...body } }, 201);
-  } catch (e) { return err(e, 'invalid_prazo', 400); }
+  } catch (e) {
+    if (e instanceof z.ZodError) return err(e, 'invalid_prazo', 400);
+    return err(e);
+  }
 });
 
 prazos.patch('/:id', async (c) => {

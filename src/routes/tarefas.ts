@@ -26,5 +26,8 @@ tarefas.post('/', async (c) => {
       .bind(id, body.processo_id, body.titulo, body.responsavel, body.vencimento).run();
     await audit(c.env.DB, 'portal', 'create', 'tarefa', id);
     return c.json({ data: { id, ...body } }, 201);
-  } catch (e) { return err(e, 'invalid_tarefa', 400); }
+  } catch (e) {
+    if (e instanceof z.ZodError) return err(e, 'invalid_tarefa', 400);
+    return err(e);
+  }
 });

@@ -39,7 +39,10 @@ processos.post('/', async (c) => {
     ).bind(id, body.cliente_id, body.numero_cnj, body.tribunal, body.fase, body.responsavel, body.area).run();
     await audit(c.env.DB, 'portal', 'create', 'processo', id);
     return c.json({ data: { id, ...body } }, 201);
-  } catch (e) { return err(e, 'invalid_processo', 400); }
+  } catch (e) {
+    if (e instanceof z.ZodError) return err(e, 'invalid_processo', 400);
+    return err(e);
+  }
 });
 
 processos.get('/:id', async (c) => {
