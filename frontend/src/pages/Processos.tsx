@@ -1,31 +1,25 @@
 // frontend/src/pages/Processos.tsx
-import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { api } from '../lib/api';
 
 type Processo = { id: string; numero_cnj: string; cliente_nome?: string; status: string; fase: string; tribunal?: string };
 
-const ink = '#1c2430';
-const muted = '#5d6874';
-const paper = '#f6f4ee';
-const cardBg = '#ffffff';
-const line = '#e2dccc';
-const brand = '#1e3a5f';
-const amber = '#8a5a00';
-const seal = '#a61e1e';
-const sans = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-const serif = "Georgia, 'Times New Roman', serif";
-
-function spine(status: string): string {
-  if (status === 'perdido') return seal;
-  if (status === 'arquivado') return muted;
-  if (status === 'ativo') return brand;
-  return amber;
+function spineClass(status: string): string {
+  if (status === 'perdido') return 'border-l-seal';
+  if (status === 'arquivado') return 'border-l-muted';
+  if (status === 'ativo') return 'border-l-brand';
+  return 'border-l-amber';
 }
 
-const inputStyle: CSSProperties = {
-  width: '100%', boxSizing: 'border-box', padding: '10px 12px', minHeight: 44,
-  borderRadius: 8, border: `1px solid ${line}`, fontFamily: sans, fontSize: 15, color: ink, background: cardBg,
-};
+function statusBadge(status: string): string {
+  if (status === 'perdido') return 'bg-seal-wash text-seal';
+  if (status === 'arquivado') return 'border border-line bg-paper text-muted';
+  if (status === 'ativo') return 'bg-brand-wash text-brand';
+  return 'bg-amber-wash text-amber';
+}
+
+const fieldClass =
+  'h-11 w-full rounded-sheet border border-line bg-sheet px-3 font-sans text-[15px] text-ink placeholder:text-muted/70 focus:border-brand';
 
 export function Processos() {
   const [q, setQ] = useState('');
@@ -54,25 +48,25 @@ export function Processos() {
   }
 
   return (
-    <main style={{ padding: '20px 16px 96px', maxWidth: 640, margin: '0 auto', background: paper, minHeight: '100vh', fontFamily: sans }}>
-      <h1 style={{ fontFamily: serif, fontSize: 26, margin: '4px 0 4px', color: brand }}>Processos</h1>
-      <p style={{ margin: '0 0 16px', color: muted, fontSize: 14 }}>Busque por CNJ ou nome do cliente.</p>
-      <form onSubmit={onSearch} style={{ marginBottom: 16 }}>
+    <main className="w-full">
+      <h1 className="font-display text-2xl font-semibold text-brand sm:text-3xl">Processos</h1>
+      <p className="mt-1 mb-5 text-sm text-muted">Busque por CNJ ou nome do cliente.</p>
+      <form onSubmit={onSearch} className="mb-6 flex flex-col gap-2 lg:flex-row lg:items-center">
         <input
-          style={{ ...inputStyle, marginBottom: 8 }}
+          className={`${fieldClass} lg:flex-1`}
           placeholder="CNJ ou nome do cliente"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           aria-label="Buscar por CNJ ou nome"
         />
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <select style={{ ...inputStyle, flex: 1 }} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filtrar por status">
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:shrink-0">
+          <select className={`${fieldClass} lg:w-44`} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filtrar por status">
             <option value="">Todos os status</option>
             <option value="ativo">Ativo</option>
             <option value="suspenso">Suspenso</option>
             <option value="arquivado">Arquivado</option>
           </select>
-          <select style={{ ...inputStyle, flex: 1 }} value={fase} onChange={(e) => setFase(e.target.value)} aria-label="Filtrar por fase">
+          <select className={`${fieldClass} lg:w-44`} value={fase} onChange={(e) => setFase(e.target.value)} aria-label="Filtrar por fase">
             <option value="">Todas as fases</option>
             <option value="conhecimento">Conhecimento</option>
             <option value="execucao">Execução</option>
@@ -81,21 +75,33 @@ export function Processos() {
         </div>
         <button
           type="submit"
-          style={{ width: '100%', padding: '10px 16px', minHeight: 44, borderRadius: 8, border: `1px solid ${brand}`, background: brand, color: '#fff', fontSize: 15, fontWeight: 600 }}
+          className="inline-flex h-11 w-full items-center justify-center rounded-sheet border border-brand bg-brand px-5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-deep lg:w-auto lg:shrink-0"
         >Buscar</button>
       </form>
-      {error && <p>Erro ao carregar: {error}</p>}
-      {!error && data === null && <p>Carregando…</p>}
-      {!error && data !== null && data.length === 0 && <p style={{ color: muted }}>Nenhum processo encontrado. Ajuste a busca ou os filtros.</p>}
-      {!error && data !== null && data.map((p) => (
-        <a key={p.id} href={`/processos/${encodeURIComponent(p.id)}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <article style={{ background: cardBg, border: `1px solid ${line}`, borderLeft: `4px solid ${spine(p.status)}`, borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-            <h2 style={{ fontFamily: serif, fontSize: 17, margin: '0 0 4px', color: brand }}>{p.numero_cnj}</h2>
-            <p style={{ margin: 0, fontSize: 15 }}>{p.cliente_nome ?? ''}</p>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: muted }}>{p.status} · {p.fase}{p.tribunal ? ` · ${p.tribunal}` : ''}</p>
-          </article>
-        </a>
-      ))}
+      {error && <p className="text-seal">Erro ao carregar: {error}</p>}
+      {!error && data === null && <p className="text-muted">Carregando…</p>}
+      {!error && data !== null && data.length === 0 && <p className="text-muted">Nenhum processo encontrado. Ajuste a busca ou os filtros.</p>}
+      {!error && data !== null && data.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {data.map((p, i) => (
+            <a
+              key={p.id}
+              href={`/processos/${encodeURIComponent(p.id)}`}
+              className={`block rounded-sheet transition-shadow hover:shadow-lift ${i === 0 && data.length > 2 ? 'sm:col-span-2 xl:col-span-1' : ''}`}
+            >
+              <article className={`h-full rounded-sheet border border-line border-l-4 bg-sheet p-4 shadow-sheet transition-colors hover:border-brand/30 ${spineClass(p.status)}`}>
+                <h2 className="font-display text-[17px] font-semibold text-brand">{p.numero_cnj}</h2>
+                <p className="mt-0.5 text-[15px] text-ink">{p.cliente_nome ?? ''}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <span className={`rounded-stamp px-2 py-0.5 text-[13px] font-medium ${statusBadge(p.status)}`}>{p.status}</span>
+                  <span className="rounded-stamp border border-line bg-paper px-2 py-0.5 text-[13px] text-muted">{p.fase}</span>
+                </div>
+                {p.tribunal ? <p className="mt-2 text-[13px] text-muted">{p.tribunal}</p> : null}
+              </article>
+            </a>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

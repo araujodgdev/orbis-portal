@@ -1,22 +1,8 @@
 // frontend/src/pages/Noticias.tsx
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 
 type Noticia = { id: string; titulo: string; link: string; resumo?: string; area: string; fonte?: string };
-
-const ink = '#1c2430';
-const muted = '#5d6874';
-const paper = '#f6f4ee';
-const cardBg = '#ffffff';
-const line = '#e2dccc';
-const brand = '#1e3a5f';
-const sans = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-const serif = "Georgia, 'Times New Roman', serif";
-
-const selectStyle: CSSProperties = {
-  width: '100%', boxSizing: 'border-box', padding: '10px 12px', minHeight: 44,
-  borderRadius: 8, border: `1px solid ${line}`, fontFamily: sans, fontSize: 15, color: ink, background: cardBg,
-};
 
 const AREAS = ['geral', 'civel', 'trabalhista', 'penal', 'tributario', 'empresarial'];
 
@@ -32,28 +18,82 @@ export function Noticias() {
       .then((r) => setData(r.data))
       .catch((e) => setError(String(e)));
   }, [area]);
+  const featured = data && data.length > 0 ? data[0] : null;
+  const rest = data && data.length > 1 ? data.slice(1) : [];
   return (
-    <main style={{ padding: '20px 16px 96px', maxWidth: 640, margin: '0 auto', background: paper, minHeight: '100vh', fontFamily: sans }}>
-      <h1 style={{ fontFamily: serif, fontSize: 26, margin: '4px 0 4px', color: brand }}>Notícias</h1>
-      <p style={{ margin: '0 0 16px', color: muted, fontSize: 14 }}>Curadoria jurídica do escritório.</p>
-      <div style={{ marginBottom: 16 }}>
-        <select style={selectStyle} value={area} onChange={(e) => setArea(e.target.value)} aria-label="Filtrar por área">
+    <main className="min-w-0">
+      <header className="border-b border-line pb-5">
+        <h1 className="font-display text-3xl font-semibold text-brand lg:text-4xl">Notícias</h1>
+        <p className="mt-1 text-sm leading-relaxed text-muted">Curadoria jurídica do escritório.</p>
+      </header>
+
+      <div className="mt-5">
+        <select
+          value={area}
+          onChange={(e) => setArea(e.target.value)}
+          aria-label="Filtrar por área"
+          className="min-h-11 w-full rounded-sheet border border-line bg-sheet px-3 py-2.5 text-[15px] text-ink shadow-sheet transition-colors hover:border-brand/40 sm:max-w-xs"
+        >
           <option value="">Todas as áreas</option>
           {AREAS.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
       </div>
-      {error && <p>Erro ao carregar: {error}</p>}
-      {!error && data === null && <p>Carregando…</p>}
-      {!error && data !== null && data.length === 0 && <p style={{ color: muted }}>Nenhuma notícia nesta área ainda.</p>}
-      {!error && data !== null && data.map((n) => (
-        <article key={n.id} style={{ background: cardBg, border: `1px solid ${line}`, borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-          <h2 style={{ fontFamily: serif, fontSize: 17, margin: '0 0 4px' }}>
-            <a href={n.link} target="_blank" rel="noreferrer" style={{ color: brand }}>{n.titulo}</a>
-          </h2>
-          <p style={{ margin: '0 0 4px', fontSize: 13, color: muted }}>{n.area}{n.fonte ? ` · ${n.fonte}` : ''}</p>
-          {!!n.resumo && <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6 }}>{n.resumo}</p>}
-        </article>
-      ))}
+
+      {error && (
+        <p className="mt-6 rounded-sheet border border-seal/30 bg-seal-wash px-4 py-3 text-[15px] leading-relaxed text-seal-deep">
+          Erro ao carregar: {error}
+        </p>
+      )}
+      {!error && data === null && <p className="mt-6 text-[15px] text-muted">Carregando…</p>}
+      {!error && data !== null && data.length === 0 && (
+        <p className="mt-6 rounded-sheet border border-dashed border-line bg-sheet px-4 py-10 text-center text-[15px] text-muted">
+          Nenhuma notícia nesta área ainda.
+        </p>
+      )}
+
+      {!error && featured && (
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+          <article
+            key={featured.id}
+            className="rounded-panel border border-line bg-sheet p-5 shadow-sheet transition-colors hover:border-brand/40 sm:p-6 md:col-span-2 lg:col-span-3 lg:p-8"
+          >
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="inline-flex items-center rounded-stamp bg-brand-wash px-2 py-0.5 text-[13px] font-medium text-brand">
+                {featured.area}
+              </span>
+              {featured.fonte && <span className="text-[13px] text-muted">{featured.fonte}</span>}
+            </div>
+            <h2 className="mt-3 font-display text-2xl leading-snug font-semibold text-balance lg:text-[32px] lg:leading-tight">
+              <a href={featured.link} target="_blank" rel="noreferrer" className="text-brand hover:underline">
+                {featured.titulo}
+              </a>
+            </h2>
+            {!!featured.resumo && (
+              <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-ink/90">{featured.resumo}</p>
+            )}
+          </article>
+
+          {rest.map((n) => (
+            <article
+              key={n.id}
+              className="flex flex-col rounded-sheet border border-line bg-sheet p-4 shadow-sheet transition-colors hover:border-brand/40 sm:p-5"
+            >
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <span className="inline-flex items-center rounded-stamp bg-brand-wash px-2 py-0.5 text-[13px] font-medium text-brand">
+                  {n.area}
+                </span>
+                {n.fonte && <span className="text-[13px] text-muted">{n.fonte}</span>}
+              </div>
+              <h2 className="mt-2.5 font-display text-[17px] leading-snug font-semibold">
+                <a href={n.link} target="_blank" rel="noreferrer" className="text-brand hover:underline">
+                  {n.titulo}
+                </a>
+              </h2>
+              {!!n.resumo && <p className="mt-1.5 text-[15px] leading-relaxed text-ink/90">{n.resumo}</p>}
+            </article>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

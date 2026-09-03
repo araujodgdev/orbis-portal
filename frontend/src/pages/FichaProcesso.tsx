@@ -1,5 +1,5 @@
 // frontend/src/pages/FichaProcesso.tsx
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 
 type Ficha = {
@@ -9,89 +9,82 @@ type Ficha = {
   documentos: Array<{ id: string; titulo: string }>;
 };
 
-const ink = '#1c2430';
-const muted = '#5d6874';
-const paper = '#f6f4ee';
-const cardBg = '#ffffff';
-const line = '#e2dccc';
-const brand = '#1e3a5f';
-const amber = '#8a5a00';
-const seal = '#a61e1e';
-const sans = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-const serif = "Georgia, 'Times New Roman', serif";
-
-const h2Style: CSSProperties = { fontFamily: serif, fontSize: 19, margin: '0 0 8px', color: ink };
-const listStyle: CSSProperties = { margin: 0, paddingLeft: 18, fontFamily: sans, fontSize: 15, lineHeight: 1.7, color: ink };
-
-// Timeline rail: the one distinctive element — movimentações are a true
-// chronological sequence, so a vertical rail with dots is the honest device.
-const timelineStyle: CSSProperties = {
-  margin: 0,
-  padding: 0,
-  listStyle: 'none',
-  fontFamily: sans,
-  fontSize: 15,
-  lineHeight: 1.6,
-  color: ink,
-};
-
-const timelineItemStyle: CSSProperties = {
-  position: 'relative',
-  padding: '0 0 14px 22px',
-  borderLeft: `2px solid ${line}`,
-  marginLeft: 6,
-};
-
-const timelineDotStyle: CSSProperties = {
-  position: 'absolute',
-  left: -7,
-  top: 5,
-  width: 12,
-  height: 12,
-  borderRadius: '50%',
-  background: brand,
-  border: '2px solid #fff',
-  boxShadow: `0 0 0 1px ${line}`,
-};
-
 export function FichaProcesso({ id }: { id: string }) {
   const [d, setD] = useState<null | Ficha>(null);
   const [error, setError] = useState('');
   useEffect(() => { api(`/api/processos/${id}`).then(setD as never).catch((e) => setError(String(e))); }, [id]);
   if (error) return (
-    <main style={{ padding: 16, fontFamily: sans, color: ink }}>
+    <main className="font-sans text-ink">
       <p>Erro ao carregar ficha: {error}</p>
-      <p><a href="/processos" style={{ color: brand }}>Voltar para processos</a></p>
+      <p><a href="/processos" className="text-brand underline underline-offset-2 hover:text-brand-deep">Voltar para processos</a></p>
     </main>
   );
-  if (!d) return <p style={{ fontFamily: sans, color: ink }}>Carregando ficha…</p>;
+  if (!d) return <p className="font-sans text-ink">Carregando ficha…</p>;
   return (
-    <main style={{ padding: '20px 16px 96px', maxWidth: 680, margin: '0 auto', background: paper, minHeight: '100vh', fontFamily: sans }}>
-      <h1 style={{ fontFamily: serif, fontSize: 24, margin: '4px 0 12px', color: brand }}>{d.data.numero_cnj}</h1>
-      <button
-        title="Disponível com Hermes — sub-projeto 3"
-        style={{ padding: '10px 16px', minHeight: 40, borderRadius: 8, border: `1px solid ${brand}`, background: brand, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}
-        onClick={() => api('/api/jobs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tipo: 'minuta', payload: { processo_id: id } }) }).then(() => alert('Pedido enfileirado (Hermes plugado no sub-projeto 3).'))}
-      >Pedir minuta</button>
-      <section style={{ background: cardBg, border: `1px solid ${line}`, borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-        <h2 style={h2Style}>Movimentações</h2>
-        {d.movimentacoes.length === 0 && <p style={{ margin: 0, color: muted }}>Nenhuma movimentação registrada.</p>}
-        <ul style={timelineStyle}>{d.movimentacoes.map((m) => (
-          <li key={m.id} style={timelineItemStyle}>
-            <span style={timelineDotStyle} aria-hidden="true" />
-            <span style={{ color: muted, fontSize: 13 }}>{m.data}</span><br />{m.texto}
-          </li>))}</ul>
-      </section>
-      <section style={{ background: cardBg, border: `1px solid ${line}`, borderLeft: `4px solid ${amber}`, borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-        <h2 style={h2Style}>Prazos</h2>
-        {d.prazos.length === 0 && <p style={{ margin: 0, color: muted }}>Nenhum prazo em aberto.</p>}
-        <ul style={listStyle}>{d.prazos.map((p) => <li key={p.id}>{p.data} · {p.tipo} · {p.status}</li>)}</ul>
-      </section>
-      <section style={{ background: cardBg, border: `1px solid ${line}`, borderLeft: `4px solid ${seal}`, borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
-        <h2 style={h2Style}>Documentos</h2>
-        {d.documentos.length === 0 && <p style={{ margin: 0, color: muted }}>Nenhum documento anexado.</p>}
-        <ul style={listStyle}>{d.documentos.map((x) => <li key={x.id}>{x.titulo}</li>)}</ul>
-      </section>
+    <main className="font-sans text-ink">
+      <a href="/processos" className="text-sm text-brand underline-offset-2 hover:text-brand-deep hover:underline">
+        Voltar para processos
+      </a>
+      <h1 className="mt-2 font-display text-2xl font-semibold text-brand sm:text-3xl">{d.data.numero_cnj}</h1>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        <section aria-label="Movimentações" className="rounded-sheet border border-line bg-sheet p-5 shadow-sheet sm:p-6">
+          <h2 className="font-display text-xl font-semibold">Movimentações</h2>
+          {d.movimentacoes.length === 0 && <p className="mt-2 text-muted">Nenhuma movimentação registrada.</p>}
+          {d.movimentacoes.length > 0 && (
+            <ul className="mt-4">
+              {d.movimentacoes.map((m) => (
+                <li key={m.id} className="relative ml-1.5 border-l-2 border-line pb-5 pl-6 last:pb-0">
+                  <span aria-hidden="true" className="absolute top-1.5 -left-[7px] h-3 w-3 rounded-full border-2 border-white bg-brand ring-1 ring-line" />
+                  <span className="block text-[13px] text-muted">{m.data}</span>
+                  <span className="block text-[15px] leading-relaxed">{m.texto}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <div className="grid content-start gap-5">
+          <section aria-label="Pedir minuta" className="rounded-panel bg-brand-deep p-5 text-white">
+            <p className="text-sm leading-relaxed text-white/70">Disponível com Hermes — sub-projeto 3</p>
+            <button
+              title="Disponível com Hermes — sub-projeto 3"
+              className="mt-3 min-h-10 w-full cursor-pointer rounded-sheet bg-white px-4 py-2.5 text-[15px] font-semibold text-brand-deep transition-colors hover:bg-brand-wash"
+              onClick={() => api('/api/jobs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tipo: 'minuta', payload: { processo_id: id } }) }).then(() => alert('Pedido enfileirado (Hermes plugado no sub-projeto 3).'))}
+            >Pedir minuta</button>
+          </section>
+
+          <section aria-label="Prazos" className="rounded-sheet border border-line border-l-4 border-l-amber bg-sheet p-5">
+            <h2 className="font-display text-xl font-semibold">Prazos</h2>
+            {d.prazos.length === 0 && <p className="mt-2 text-muted">Nenhum prazo em aberto.</p>}
+            {d.prazos.length > 0 && (
+              <ul className="mt-2 divide-y divide-line">
+                {d.prazos.map((p) => (
+                  <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
+                    <span className="text-sm text-muted">{p.data}</span>
+                    <span className="text-[15px] font-medium">{p.tipo}</span>
+                    <span className="ml-auto rounded-stamp border border-line bg-amber-wash px-2 py-0.5 text-xs font-medium text-amber">{p.status}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section aria-label="Documentos" className="border-t-2 border-brand pt-4">
+            <h2 className="font-display text-xl font-semibold">Documentos</h2>
+            {d.documentos.length === 0 && <p className="mt-2 text-muted">Nenhum documento anexado.</p>}
+            {d.documentos.length > 0 && (
+              <ul className="mt-2 divide-y divide-line border-b border-line">
+                {d.documentos.map((x) => (
+                  <li key={x.id} className="border-t border-line py-2.5 text-[15px] first:border-t-0">
+                    {x.titulo}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </div>
     </main>
   );
 }

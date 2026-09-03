@@ -1,5 +1,5 @@
 // frontend/src/pages/Dashboard.tsx
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 
 export function riskLabel(p: { status: string }): string {
@@ -10,31 +10,6 @@ export function riskLabel(p: { status: string }): string {
 
 type Dash = { prazos7d: Array<{ id: string; data: string; tipo: string; numero_cnj?: string }>; naoLidas: Array<{ id: string; texto: string; data: string }>; risco: Array<{ id: string; numero_cnj: string }> };
 
-const ink = '#1c2430';
-const muted = '#5d6874';
-const paper = '#f6f4ee';
-const cardBg = '#ffffff';
-const line = '#e2dccc';
-const brand = '#1e3a5f';
-const amber = '#8a5a00';
-const seal = '#a61e1e';
-const sans = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-const serif = "Georgia, 'Times New Roman', serif";
-
-function card(spine: string): CSSProperties {
-  return {
-    background: cardBg,
-    border: `1px solid ${line}`,
-    borderLeft: `4px solid ${spine}`,
-    borderRadius: 10,
-    padding: '12px 14px',
-    marginBottom: 12,
-  };
-}
-
-const listStyle: CSSProperties ={ margin: 0, paddingLeft: 18, fontFamily: sans, fontSize: 15, lineHeight: 1.7, color: ink };
-const h2Style: CSSProperties ={ fontFamily: serif, fontSize: 19, margin: '0 0 8px', color: ink };
-
 export function Dashboard() {
   const [data, setData] = useState<Dash | null>(null);
   const [error, setError] = useState('');
@@ -42,27 +17,62 @@ export function Dashboard() {
     api<{ prazos7d: Dash['prazos7d']; naoLidas: Dash['naoLidas']; risco: Dash['risco'] }>('/api/dashboard')
       .then((d) => setData(d as Dash)).catch((e) => setError(String(e)));
   }, []);
-  if (error) return <main style={{ padding: 16, fontFamily: sans, color: ink }}><p>Erro ao carregar: {error}</p></main>;
-  if (!data) return <main style={{ padding: 16, fontFamily: sans, color: ink }}><p>Carregando…</p></main>;
+  if (error) return <main><p className="text-[15px] text-ink">Erro ao carregar: {error}</p></main>;
+  if (!data) return <main><p className="text-[15px] text-ink">Carregando…</p></main>;
   return (
-    <main style={{ padding: '20px 16px 96px', maxWidth: 640, margin: '0 auto', background: paper, minHeight: '100vh', fontFamily: sans }}>
-      <h1 style={{ fontFamily: serif, fontSize: 26, margin: '4px 0 4px', color: brand }}>Hoje no escritório</h1>
-      <p style={{ margin: '0 0 16px', color: muted, fontSize: 14 }}>Prazos, movimentações e riscos num só olhar.</p>
-      <section style={card(brand)}><h2 style={h2Style}>Prazos 7 dias ({data.prazos7d.length})</h2>
-        {data.prazos7d.length === 0 && <p style={{ margin: 0, color: muted }}>Nenhum prazo próximo. 🎉</p>}
-        <ul style={listStyle}>{data.prazos7d.map((p) => <li key={p.id}>{p.data} · {p.tipo} · {p.numero_cnj ?? ''}</li>)}</ul>
-      </section>
-      <section style={card(amber)}><h2 style={h2Style}>Não lidas ({data.naoLidas.length})</h2>
-        <ul style={listStyle}>{data.naoLidas.map((m) => (
-          <li key={m.id}>{m.data} — {m.texto.slice(0, 80)}
-            <button
-              style={{ marginLeft: 8, padding: '8px 12px', minHeight: 36, borderRadius: 8, border: `1px solid ${brand}`, background: brand, color: '#fff', fontSize: 14 }}
-              onClick={() => api(`/api/movimentacoes/${m.id}/lida`, { method: 'PATCH' }).then(() => location.reload())}>Marcar lida</button>
-          </li>))}</ul>
-      </section>
-      <section style={card(seal)}><h2 style={h2Style}>Risco ({data.risco.length})</h2>
-        <ul style={listStyle}>{data.risco.map((r) => <li key={r.id}>⚠️ {r.numero_cnj}</li>)}</ul>
-      </section>
+    <main>
+      <h1 className="font-display text-2xl font-semibold text-brand sm:text-3xl">Hoje no escritório</h1>
+      <p className="mt-1 text-sm text-muted">Prazos, movimentações e riscos num só olhar.</p>
+
+      <dl className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="flex flex-col rounded-sheet border border-line bg-sheet px-3 py-3 shadow-sheet">
+          <dt className="text-xs leading-snug text-muted sm:text-sm">Prazos 7 dias</dt>
+          <dd className="mt-1 font-display text-2xl leading-none text-brand">{data.prazos7d.length}</dd>
+        </div>
+        <div className="flex flex-col rounded-sheet border border-line bg-amber-wash/60 px-3 py-3">
+          <dt className="text-xs leading-snug text-muted sm:text-sm">Não lidas</dt>
+          <dd className="mt-1 font-display text-2xl leading-none text-amber">{data.naoLidas.length}</dd>
+        </div>
+        <div className="flex flex-col rounded-sheet border border-seal/25 bg-seal-wash/60 px-3 py-3">
+          <dt className="text-xs leading-snug text-muted sm:text-sm">Risco</dt>
+          <dd className="mt-1 font-display text-2xl leading-none text-seal">{data.risco.length}</dd>
+        </div>
+      </dl>
+
+      <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+        <section className="min-w-0 rounded-panel border border-line bg-sheet shadow-sheet">
+          <h2 className="border-b border-line px-4 pt-4 pb-3 font-display text-lg text-ink">Prazos 7 dias ({data.prazos7d.length})</h2>
+          {data.prazos7d.length === 0 && <p className="px-4 py-3 text-sm text-muted">Nenhum prazo próximo.</p>}
+          <ul className="divide-y divide-line">{data.prazos7d.map((p) => (
+            <li key={p.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2.5 text-[15px] leading-relaxed text-ink">
+              <span className="rounded-stamp bg-brand-wash px-1.5 py-0.5 text-xs font-semibold text-brand">{p.data}</span>
+              <span>{p.tipo}</span>
+              <span className="text-sm text-muted">{p.numero_cnj ?? ''}</span>
+            </li>))}
+          </ul>
+        </section>
+        <section className="min-w-0 rounded-sheet border border-line bg-amber-wash/50">
+          <h2 className="border-b border-line px-4 pt-4 pb-3 font-display text-lg text-ink">Não lidas ({data.naoLidas.length})</h2>
+          <ul className="divide-y divide-line">{data.naoLidas.map((m) => (
+            <li key={m.id} className="space-y-2 px-4 py-3">
+              <span className="inline-block rounded-stamp bg-sheet px-1.5 py-0.5 text-xs font-medium text-muted">{m.data}</span>
+              <p className="text-[15px] leading-relaxed text-ink">{m.texto.slice(0, 80)}</p>
+              <button
+                className="min-h-9 rounded-stamp bg-brand px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-deep"
+                onClick={() => api(`/api/movimentacoes/${m.id}/lida`, { method: 'PATCH' }).then(() => location.reload())}>Marcar lida</button>
+            </li>))}
+          </ul>
+        </section>
+        <section className="min-w-0 rounded-sheet border border-seal/25 bg-seal-wash/60">
+          <h2 className="border-b border-seal/15 px-4 pt-4 pb-3 font-display text-lg text-ink">Risco ({data.risco.length})</h2>
+          <ul className="divide-y divide-seal/15">{data.risco.map((r) => (
+            <li key={r.id} className="flex items-center gap-2 px-4 py-2.5 text-[15px] text-ink">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-seal" />
+              <span>{r.numero_cnj}</span>
+            </li>))}
+          </ul>
+        </section>
+      </div>
     </main>
   );
 }
