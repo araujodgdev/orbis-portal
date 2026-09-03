@@ -86,6 +86,14 @@ describe('MCP write tools', () => {
     const text = json.result.content[0].text as string;
     expect(text).toMatch(/processos vinculados/i);
   });
+  it('update_prazo_status with unknown id returns not-found error', async () => {
+    // makeDb: SELECT id FROM prazos → first() null (só clientes/api_tokens retornam linha)
+    const { json } = await rpc(makeDb(), { jsonrpc: '2.0', id: 6, method: 'tools/call',
+      params: { name: 'update_prazo_status', arguments: { id: 'prz_missing', status: 'cumprido' } } });
+    expect(json.result.isError).toBe(true);
+    const text = json.result.content[0].text as string;
+    expect(text).toMatch(/não encontrado/i);
+  });
   it('tools/list totals 16 tools', async () => {
     const { json } = await rpc(makeDb(), { jsonrpc: '2.0', id: 1, method: 'tools/list' });
     expect(json.result?.tools.length).toBe(16);
