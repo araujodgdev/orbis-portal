@@ -12,6 +12,9 @@ import { jobs } from './routes/jobs';
 import { noticias } from './routes/noticias';
 import { csvImport } from './routes/csv';
 import { tokens } from './routes/tokens';
+import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
+import { buildMcpServer } from './mcp/server';
+import { verifyBearer } from './mcp/auth';
 
 export type Env = { DB: D1Database; DOCS: R2Bucket; ALLOWED_ORIGIN: string; ASSETS: { fetch: typeof fetch } };
 const app = new Hono<{ Bindings: Env }>();
@@ -33,6 +36,17 @@ app.route('/api/jobs', jobs as never);
 app.route('/api/noticias', noticias as never);
 app.route('/api/import', csvImport as never);
 app.route('/api/tokens', tokens as never);
+app.all('/mcp', async (c) => {
+  if (c.req.method !== 'POST') {
+    return Response.json({ jsonrpc: '2.0', error: { code: -32000, message: 'Method not allowed.' }, id: null }, { status: 405 });
+  }
+  const userId = await verifyBearer(c.env.DB, c.req.header('authorization'));
+  if (!userId) return c.json({ error: 'unauthorized', code: 'unauthorized', requestId: 'mcp' }, 401);
+  const server = buildMcpServer({ db: c.env.DB, userId });
+  const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  await server.connect(transport);
+  return transport.handleRequest(c.req.raw);
+});
 app.post('/api/login', async (c) => {
   try {
     const { email, pass } = await c.req.json() as { email: string; pass: string };

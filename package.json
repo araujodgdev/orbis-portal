@@ -9,6 +9,14 @@
     "db:migrate": "wrangler d1 migrations apply orbis_db --local",
     "db:seed": "wrangler d1 execute orbis_db --local --file=scripts/seed-demo.sql"
   },
-  "dependencies": { "hono": "^4.7.0", "zod": "^3.23.8" },
-  "devDependencies": { "typescript": "^5.6.0", "vitest": "^2.1.0", "wrangler": "^3.95.0" }
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "hono": "^4.7.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^3.95.0"
+  }
 }
