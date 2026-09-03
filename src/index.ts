@@ -9,6 +9,8 @@ import { dashboard } from './routes/dashboard';
 import { documentos } from './routes/documentos';
 import { tarefas } from './routes/tarefas';
 import { jobs } from './routes/jobs';
+import { noticias } from './routes/noticias';
+import { csvImport } from './routes/csv';
 
 export type Env = { DB: D1Database; DOCS: R2Bucket; ALLOWED_ORIGIN: string };
 const app = new Hono<{ Bindings: Env }>();
@@ -27,6 +29,8 @@ app.route('/api/documentos', documentos as never);
 app.route('/api/processos-docs', documentos as never);
 app.route('/api/tarefas', tarefas as never);
 app.route('/api/jobs', jobs as never);
+app.route('/api/noticias', noticias as never);
+app.route('/api/import', csvImport as never);
 app.post('/api/login', async (c) => {
   try {
     const { email, pass } = await c.req.json() as { email: string; pass: string };
