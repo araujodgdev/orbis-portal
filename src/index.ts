@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { reqId, err } from './lib/errors';
 import { hashPass, requireAuth, audit } from './lib/auth';
 import { clientes } from './routes/clientes';
+import { processos } from './routes/processos';
 
 export type Env = { DB: D1Database; DOCS: R2Bucket; ALLOWED_ORIGIN: string };
 const app = new Hono<{ Bindings: Env }>();
@@ -12,6 +13,7 @@ app.get('/api/health', (c) => {
 
 app.use('/api/*', requireAuth as never);
 app.route('/api/clientes', clientes as never);
+app.route('/api/processos', processos as never);
 app.post('/api/login', async (c) => {
   try {
     const { email, pass } = await c.req.json() as { email: string; pass: string };
