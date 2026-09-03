@@ -33,7 +33,10 @@ async function rpc(db: never, body: unknown, token = 'Bearer orbis_test') {
 describe('POST /mcp', () => {
   it('lists registered tools with valid token', async () => {
     const { json } = await rpc(makeDb(), { jsonrpc: '2.0', id: 1, method: 'tools/list' });
-    expect(json?.result?.tools.length).toBe(0);
+    const names = json?.result?.tools.map((t) => t.name) ?? [];
+    for (const n of ['search_processos', 'get_processo', 'search_clientes', 'get_cliente', 'list_prazos', 'list_tarefas', 'get_dashboard']) {
+      expect(names).toContain(n);
+    }
   });
   it('rejects without token', async () => {
     const res = await app.request('/mcp', {

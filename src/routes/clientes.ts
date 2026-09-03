@@ -5,7 +5,7 @@ import { audit } from '../lib/auth';
 import { err } from '../lib/errors';
 import type { Env } from '../index';
 
-const schema = z.object({
+export const schema = z.object({
   nome: z.string().min(2).max(120),
   contato: z.string().max(200).default(''),
   honorario_status: z.string().max(40).default('ativo'),

@@ -10,7 +10,7 @@
     "db:seed": "wrangler d1 execute orbis_db --local --file=scripts/seed-demo.sql"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "1.30.0",
     "hono": "^4.7.0",
     "zod": "^3.25.76"
   },

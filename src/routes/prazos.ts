@@ -6,7 +6,7 @@ import { isDateYYYYMMDD } from '../lib/validate';
 import type { Env } from '../index';
 
 export const prazos = new Hono<{ Bindings: Env }>();
-const schema = z.object({ data: z.string().refine(isDateYYYYMMDD, 'Data inválida. Use AAAA-MM-DD'), tipo: z.string().max(40).default('manifestacao') });
+export const schema = z.object({ data: z.string().refine(isDateYYYYMMDD, 'Data inválida. Use AAAA-MM-DD'), tipo: z.string().max(40).default('manifestacao') });
 
 prazos.post('/processo/:pid', async (c) => {
   try {

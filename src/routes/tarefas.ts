@@ -6,7 +6,7 @@ import { err } from '../lib/errors';
 import type { Env } from '../index';
 
 export const tarefas = new Hono<{ Bindings: Env }>();
-const schema = z.object({
+export const schema = z.object({
   processo_id: z.string().min(3),
   titulo: z.string().min(2).max(200),
   responsavel: z.string().max(120).default(''),

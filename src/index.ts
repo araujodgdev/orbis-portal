@@ -38,7 +38,7 @@ app.route('/api/import', csvImport as never);
 app.route('/api/tokens', tokens as never);
 app.all('/mcp', async (c) => {
   if (c.req.method !== 'POST') {
-    return Response.json({ jsonrpc: '2.0', error: { code: -32000, message: 'Method not allowed.' }, id: null }, { status: 405 });
+    return Response.json({ jsonrpc: '2.0', error: { code: -32000, message: 'Método não permitido.' }, id: null }, { status: 405 });
   }
   const userId = await verifyBearer(c.env.DB, c.req.header('authorization'));
   if (!userId) return c.json({ error: 'unauthorized', code: 'unauthorized', requestId: 'mcp' }, 401);

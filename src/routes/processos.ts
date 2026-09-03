@@ -5,7 +5,7 @@ import { err } from '../lib/errors';
 import { isCNJ } from '../lib/validate';
 import type { Env } from '../index';
 
-const schema = z.object({
+export const schema = z.object({
   cliente_id: z.string().min(3),
   numero_cnj: z.string().refine(isCNJ, 'CNJ inválido. Use NNNNNNN-DD.AAAA.J.TR.OOOO'),
   tribunal: z.string().max(20).default(''),
