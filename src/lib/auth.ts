@@ -16,10 +16,12 @@ export async function audit(
 
 export async function requireAuth(c: Context<{ Bindings: { DB: D1Database } }>, next: Next) {
   if (c.req.path === '/api/health' || c.req.path === '/api/login') return next();
+  const db = (c.env as { DB?: D1Database } | undefined)?.DB;
+  if (!db) return c.json({ error: 'unauthorized', code: 'unauthorized', requestId: 'auth' }, 401);
   const cookie = c.req.header('cookie') ?? '';
   const m = cookie.match(/orbis_session=([A-Za-z0-9_-]+)/);
   if (!m) return c.json({ error: 'unauthorized', code: 'unauthorized', requestId: 'auth' }, 401);
-  const s = await c.env.DB.prepare(`SELECT user_id, expires_at FROM sessions WHERE id = ?`).bind(m[1]).first<{ user_id: string; expires_at: string }>();
+  const s = await db.prepare(`SELECT user_id, expires_at FROM sessions WHERE id = ?`).bind(m[1]).first<{ user_id: string; expires_at: string }>();
   if (!s || s.expires_at < new Date().toISOString()) {
     return c.json({ error: 'unauthorized', code: 'unauthorized', requestId: 'auth' }, 401);
   }
