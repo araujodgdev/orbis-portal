@@ -34,7 +34,8 @@ describe('POST /mcp', () => {
   it('lists registered tools with valid token', async () => {
     const { json } = await rpc(makeDb(), { jsonrpc: '2.0', id: 1, method: 'tools/list' });
     const names = json?.result?.tools.map((t) => t.name) ?? [];
-    for (const n of ['search_processos', 'get_processo', 'search_clientes', 'get_cliente', 'list_prazos', 'list_tarefas', 'get_dashboard']) {
+    expect(names.length).toBe(16);
+    for (const n of ['search_processos', 'get_processo', 'search_clientes', 'get_cliente', 'list_prazos', 'list_tarefas', 'get_dashboard', 'create_processo', 'update_processo', 'create_cliente', 'update_cliente', 'delete_cliente', 'create_prazo', 'update_prazo_status', 'create_tarefa', 'update_tarefa']) {
       expect(names).toContain(n);
     }
   });

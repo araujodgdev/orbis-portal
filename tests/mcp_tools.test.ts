@@ -56,3 +56,38 @@ describe('MCP read tools', () => {
     }
   });
 });
+
+describe('MCP write tools', () => {
+  const dbComFilhos = {
+    prepare: (sql: string) => ({
+      bind: (..._args: unknown[]) => ({
+        first: async () => {
+          if (/FROM api_tokens/.test(sql)) return { user_id: 'u1' };
+          if (/COUNT\(\*\)/.test(sql)) return { n: 2 };
+          if (/FROM clientes/.test(sql)) return { id: 'cli_1' };
+          return null;
+        },
+        all: async () => ({ results: [] }),
+        run: async () => ({ success: true }),
+      }),
+    }),
+  } as never;
+
+  it('create_cliente validates email', async () => {
+    const { json } = await rpc(makeDb(), { jsonrpc: '2.0', id: 4, method: 'tools/call',
+      params: { name: 'create_cliente', arguments: { nome: 'X', email: 'sem-arroba' } } });
+    expect(json.result.isError).toBe(true);
+  });
+  it('delete_cliente with processos is blocked', async () => {
+    // fakeDb: COUNT(*) → { n: 2 }
+    const { json } = await rpc(dbComFilhos, { jsonrpc: '2.0', id: 5, method: 'tools/call',
+      params: { name: 'delete_cliente', arguments: { id: 'cli_1' } } });
+    expect(json.result.isError).toBe(true);
+    const text = json.result.content[0].text as string;
+    expect(text).toMatch(/processos vinculados/i);
+  });
+  it('tools/list totals 16 tools', async () => {
+    const { json } = await rpc(makeDb(), { jsonrpc: '2.0', id: 1, method: 'tools/list' });
+    expect(json.result?.tools.length).toBe(16);
+  });
+});
