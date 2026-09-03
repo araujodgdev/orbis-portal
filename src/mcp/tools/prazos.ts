@@ -50,6 +50,8 @@ export function registerPrazos(server: McpServer, ctx: ToolCtx): void {
     if (!(STATUS as readonly string[]).includes(status)) {
       throw new Error('Status inválido. Use aberto, cumprido ou perdido.');
     }
+    const row = await ctx.db.prepare(`SELECT id FROM prazos WHERE id = ?`).bind(String(args.id)).first();
+    if (!row) throw new Error('Prazo não encontrado.');
     await ctx.db.prepare(`UPDATE prazos SET status = ? WHERE id = ?`).bind(status, String(args.id)).run();
     return { ok: true };
   });
