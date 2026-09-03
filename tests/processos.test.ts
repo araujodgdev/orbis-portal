@@ -6,5 +6,6 @@ describe('isCNJ', () => {
   it('accepts formatted CNJ and rejects junk', () => {
     expect(isCNJ('0000001-01.2026.8.26.0001')).toBe(true);
     expect(isCNJ('abc')).toBe(false);
+    expect(isCNJ(undefined as never)).toBe(false);
   });
 });

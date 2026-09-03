@@ -19,10 +19,12 @@ export const processos = new Hono<{ Bindings: Env }>();
 processos.get('/', async (c) => {
   const q = (c.req.query('q') ?? '').trim();
   const status = (c.req.query('status') ?? '').trim();
+  const fase = (c.req.query('fase') ?? '').trim();
   let sql = `SELECT p.*, cl.nome AS cliente_nome FROM processos p JOIN clientes cl ON cl.id = p.cliente_id WHERE 1=1`;
   const args: unknown[] = [];
-  if (q) { sql += ` AND (p.numero_cnj LIKE ? OR cl.nome LIKE ?)`; args.push(`%${q}%`, `%${q}%`); }
+  if (q) { const qEsc = q.replace(/[%_\\]/g, (m) => '\\' + m); sql += ` AND (p.numero_cnj LIKE ? ESCAPE '\\' OR cl.nome LIKE ? ESCAPE '\\')`; args.push(`%${qEsc}%`, `%${qEsc}%`); }
   if (status) { sql += ` AND p.status = ?`; args.push(status); }
+  if (fase) { sql += ' AND p.fase = ?'; args.push(fase); }
   sql += ` ORDER BY p.created_at DESC LIMIT 100`;
   const rows = await c.env.DB.prepare(sql).bind(...args as string[]).all();
   return c.json({ data: rows.results });
