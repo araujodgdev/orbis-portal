@@ -1,6 +1,7 @@
 // frontend/src/pages/Login.tsx
 import { useState, type FormEvent } from 'react';
 import { api } from '../lib/api';
+import { Logo } from '../components/Logo';
 
 const fieldClass =
   'h-11 w-full rounded-sheet border border-line bg-sheet px-3 text-[15px] text-ink placeholder:text-muted focus:border-brand focus:outline-none';
@@ -31,7 +32,7 @@ export function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper px-4 font-sans">
       <main className="w-full max-w-sm rounded-panel border border-line bg-sheet p-6 shadow-sheet sm:p-8">
-        <p className="font-display text-3xl leading-none font-semibold text-brand">Orbis</p>
+        <Logo />
         <p className="mt-2 text-sm text-muted">Portal do escritório</p>
         <h1 className="mt-6 font-display text-xl font-semibold text-ink">Entrar</h1>
         <form onSubmit={onSubmit} className="mt-4 space-y-3">

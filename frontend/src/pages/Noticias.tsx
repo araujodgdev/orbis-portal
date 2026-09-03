@@ -18,8 +18,7 @@ export function Noticias() {
       .then((r) => setData(r.data))
       .catch((e) => setError(String(e)));
   }, [area]);
-  const featured = data && data.length > 0 ? data[0] : null;
-  const rest = data && data.length > 1 ? data.slice(1) : [];
+
   return (
     <main className="min-w-0">
       <header className="border-b border-line pb-5">
@@ -51,32 +50,13 @@ export function Noticias() {
         </p>
       )}
 
-      {!error && featured && (
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
-          <article
-            key={featured.id}
-            className="rounded-panel border border-line bg-sheet p-5 shadow-sheet transition-colors hover:border-brand/40 sm:p-6 md:col-span-2 lg:col-span-3 lg:p-8"
-          >
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              <span className="inline-flex items-center rounded-stamp bg-brand-wash px-2 py-0.5 text-[13px] font-medium text-brand">
-                {featured.area}
-              </span>
-              {featured.fonte && <span className="text-[13px] text-muted">{featured.fonte}</span>}
-            </div>
-            <h2 className="mt-3 font-display text-2xl leading-snug font-semibold text-balance lg:text-[32px] lg:leading-tight">
-              <a href={featured.link} target="_blank" rel="noreferrer" className="text-brand hover:underline">
-                {featured.titulo}
-              </a>
-            </h2>
-            {!!featured.resumo && (
-              <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-ink/90">{featured.resumo}</p>
-            )}
-          </article>
-
-          {rest.map((n) => (
-            <article
+      {!error && data !== null && data.length > 0 && (
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-4">
+          {data.map((n) => (
+            <a
               key={n.id}
-              className="flex flex-col rounded-sheet border border-line bg-sheet p-4 shadow-sheet transition-colors hover:border-brand/40 sm:p-5"
+              href={`/noticias/${encodeURIComponent(n.id)}`}
+              className="flex cursor-pointer flex-col rounded-sheet border border-line bg-sheet p-4 shadow-sheet transition-colors hover:border-brand/40 hover:shadow-lift"
             >
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 <span className="inline-flex items-center rounded-stamp bg-brand-wash px-2 py-0.5 text-[13px] font-medium text-brand">
@@ -84,13 +64,11 @@ export function Noticias() {
                 </span>
                 {n.fonte && <span className="text-[13px] text-muted">{n.fonte}</span>}
               </div>
-              <h2 className="mt-2.5 font-display text-[17px] leading-snug font-semibold">
-                <a href={n.link} target="_blank" rel="noreferrer" className="text-brand hover:underline">
-                  {n.titulo}
-                </a>
+              <h2 className="mt-2.5 font-display text-[17px] leading-snug font-semibold text-ink">
+                {n.titulo}
               </h2>
-              {!!n.resumo && <p className="mt-1.5 text-[15px] leading-relaxed text-ink/90">{n.resumo}</p>}
-            </article>
+              {!!n.resumo && <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-ink/80">{n.resumo}</p>}
+            </a>
           ))}
         </div>
       )}

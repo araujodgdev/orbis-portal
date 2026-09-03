@@ -22,6 +22,12 @@ noticias.get('/', async (c) => {
   return c.json({ data: rows.results });
 });
 
+noticias.get('/:id', async (c) => {
+  const row = await c.env.DB.prepare(`SELECT * FROM noticias WHERE id = ?`).bind(c.req.param('id')).first();
+  if (!row) return c.json({ error: 'not_found', code: 'not_found', requestId: 'not' }, 404);
+  return c.json({ data: row });
+});
+
 noticias.post('/', async (c) => {
   try {
     const body = schema.parse(await c.req.json());

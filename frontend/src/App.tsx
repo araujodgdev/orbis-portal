@@ -4,7 +4,9 @@ import { FichaProcesso } from './pages/FichaProcesso';
 import { Processos } from './pages/Processos';
 import { Clientes } from './pages/Clientes';
 import { Noticias } from './pages/Noticias';
+import { NoticiaDetalhe } from './pages/NoticiaDetalhe';
 import { Login } from './pages/Login';
+import { Logo } from './components/Logo';
 
 const NAV = [
   { href: '/', label: 'Início' },
@@ -13,8 +15,36 @@ const NAV = [
   { href: '/noticias', label: 'Notícias' },
 ];
 
-function isActive(path: string, href: string, onFicha: boolean): boolean {
-  if (href === '/processos') return path === '/processos' || onFicha;
+async function logout(): Promise<void> {
+  try {
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+  } finally {
+    window.location.href = '/login';
+  }
+}
+
+function LogoutIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      className={className}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"
+      />
+    </svg>
+  );
+}
+
+function isActive(path: string, href: string): boolean {
+  if (href === '/processos') return path === '/processos' || path.startsWith('/processos/');
+  if (href === '/noticias') return path === '/noticias' || path.startsWith('/noticias/');
   return path === href;
 }
 
@@ -22,8 +52,11 @@ export function App() {
   const path = window.location.pathname;
   if (path === '/login') return <Login />;
   const m = path.match(/^\/processos\/([^/]+)/);
+  const nm = path.match(/^\/noticias\/([^/]+)/);
   const page = m
     ? <FichaProcesso id={decodeURIComponent(m[1])} />
+    : nm
+    ? <NoticiaDetalhe id={decodeURIComponent(nm[1])} />
     : path === '/processos' ? <Processos />
     : path === '/clientes' ? <Clientes />
     : path === '/noticias' ? <Noticias />
@@ -33,12 +66,12 @@ export function App() {
       {/* Desktop: lombada fixa em azul tinta */}
       <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col bg-brand lg:flex">
         <div className="border-b border-white/15 px-6 pt-7 pb-6">
-          <p className="font-display text-3xl leading-none font-semibold text-white">Orbis</p>
+          <Logo variant="light" />
           <p className="mt-2 text-sm text-white/65">Portal do escritório</p>
         </div>
         <nav aria-label="Navegação principal" className="flex-1 space-y-1 px-3 py-5">
           {NAV.map((item) => {
-            const active = isActive(path, item.href, m !== null);
+            const active = isActive(path, item.href);
             return (
               <a
                 key={item.href}
@@ -59,16 +92,31 @@ export function App() {
             );
           })}
         </nav>
-        <p className="border-t border-white/15 px-6 py-4 text-xs leading-relaxed text-white/55">
-          Uso interno do escritório
-        </p>
+        <div className="border-t border-white/15 px-3 py-4">
+          <button
+            type="button"
+            onClick={logout}
+            className="flex w-full cursor-pointer items-center gap-3 rounded-sheet px-4 py-2.5 text-left text-[15px] text-white/70 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <LogoutIcon className="h-5 w-5" />
+            Sair
+          </button>
+        </div>
       </aside>
 
       {/* Coluna de conteúdo */}
       <div className="lg:pl-60">
         {/* Cabeçalho compacto só no celular */}
-        <header className="border-b border-line bg-paper px-4 pt-5 pb-4 lg:hidden">
-          <p className="font-display text-2xl leading-none font-semibold text-brand">Orbis</p>
+        <header className="flex items-center justify-between border-b border-line bg-paper px-4 pt-5 pb-4 lg:hidden">
+          <Logo />
+          <button
+            type="button"
+            onClick={logout}
+            className="flex cursor-pointer items-center gap-1.5 rounded-stamp px-3 py-1.5 text-sm font-semibold text-brand"
+          >
+            <LogoutIcon className="h-4 w-4" />
+            Sair
+          </button>
         </header>
         <div className="mx-auto w-full max-w-6xl px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-10 lg:pb-16">
           {page}
@@ -82,7 +130,7 @@ export function App() {
       >
         <div className="grid grid-cols-4">
           {NAV.map((item) => {
-            const active = isActive(path, item.href, m !== null);
+            const active = isActive(path, item.href);
             return (
               <a
                 key={item.href}
