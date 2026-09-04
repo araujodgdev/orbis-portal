@@ -55,8 +55,7 @@ agente já nasce `delivered`. Excluir sessão apaga as mensagens (CASCADE).
 ## API — `src/routes/chat.ts`, montado em `/api/chat`
 
 Padrões do repo: `zod schema.parse` no POST/PATCH, `requireAuth` por cookie
-na UI, `verifyBearer` no adapter, ids `cht_`/`chs_`… (`cht_` sessões,
-`chm_` mensagens), erros `{ error, code, requestId }`, PT-BR na UI.
+na UI, `verifyBearer` no adapter, ids `cht_` (sessões) / `chm_` (mensagens), erros `{ error, code, requestId }`, PT-BR na UI.
 
 UI (cookie de sessão):
 
