@@ -58,6 +58,5 @@ cd frontend && npm test
 ## 👥 Colaboração e Contribuição
 
 Para colaborar com o desenvolvimento do Orbis Portal:
-1. Veja a lista de colaboradores em [`CONTRIBUTORS.md`](./CONTRIBUTORS.md).
-2. Para deploy em produção, siga o checklist em [`README_DEPLOY.md`](./README_DEPLOY.md).
-3. Abra uma issue ou solicite alterações através de Pull Requests!
+1. Para deploy em produção, siga o checklist em [`README_DEPLOY.md`](./README_DEPLOY.md).
+2. Abra uma issue ou solicite alterações através de Pull Requests!
