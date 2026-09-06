@@ -29,7 +29,15 @@ export function ClienteNovo() {
         Voltar para clientes
       </a>
       <h1 className="mt-2 font-display text-2xl font-semibold text-brand sm:text-3xl">Novo cliente</h1>
-      <ClienteForm initial={EMPTY_CLIENTE} submitLabel="Cadastrar cliente" busy={busy} error={error} onSubmit={onSubmit} />
+      <p className="mt-1 text-sm text-muted">Cadastre um cliente para vincular processos e acompanhar honorários.</p>
+      <ClienteForm
+        initial={EMPTY_CLIENTE}
+        submitLabel="Cadastrar cliente"
+        busy={busy}
+        error={error}
+        cancelHref="/clientes"
+        onSubmit={onSubmit}
+      />
     </main>
   );
 }

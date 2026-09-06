@@ -1,5 +1,6 @@
 // frontend/src/components/ClienteForm.tsx
 import { useState, type FormEvent } from 'react';
+import { FormSection, RequiredMark } from './FormSection';
 
 export type ClienteFormValues = {
   tipo: string;
@@ -35,17 +36,23 @@ function parseBRL(raw: string): number {
 const fieldClass =
   'h-11 w-full rounded-sheet border border-line bg-sheet px-3 text-[15px] text-ink placeholder:text-muted/70 focus:border-brand focus:outline-none';
 
-function Label({ htmlFor, children }: { htmlFor: string; children: string }) {
-  return <label htmlFor={htmlFor} className="mb-1 block text-sm text-muted">{children}</label>;
+function Label({ htmlFor, required, children }: { htmlFor: string; required?: boolean; children: string }) {
+  return (
+    <label htmlFor={htmlFor} className="mb-1 block text-sm text-muted">
+      {children}
+      {required && <RequiredMark />}
+    </label>
+  );
 }
 
 export function ClienteForm({
-  initial, submitLabel, busy, error, onSubmit,
+  initial, submitLabel, busy, error, cancelHref, onSubmit,
 }: {
   initial: ClienteFormValues;
   submitLabel: string;
   busy: boolean;
   error: string;
+  cancelHref: string;
   onSubmit: (v: ClienteFormValues) => void;
 }) {
   const [v, setV] = useState(initial);
@@ -72,10 +79,9 @@ export function ClienteForm({
   const shown = error || localError;
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 space-y-5">
-      <fieldset>
-        <legend className="font-display text-lg font-semibold text-ink">Identificação</legend>
-        <div className="mt-2 flex gap-2">
+    <form onSubmit={handleSubmit} className="mt-4 max-w-2xl space-y-4">
+      <FormSection title="Identificação">
+        <div role="group" aria-label="Tipo de cliente" className="flex gap-2">
           {(['pf', 'pj'] as const).map((t) => (
             <button
               key={t}
@@ -84,7 +90,7 @@ export function ClienteForm({
               onClick={() => set('tipo', t)}
               className={v.tipo === t
                 ? 'rounded-stamp bg-brand px-4 py-1.5 text-sm font-semibold text-white'
-                : 'rounded-stamp border border-line bg-sheet px-4 py-1.5 text-sm text-ink hover:border-brand'}
+                : 'rounded-stamp border border-line bg-paper px-4 py-1.5 text-sm text-ink transition-colors hover:border-brand'}
             >
               {t === 'pf' ? 'Pessoa física' : 'Pessoa jurídica'}
             </button>
@@ -92,7 +98,7 @@ export function ClienteForm({
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label htmlFor="cli-nome">{v.tipo === 'pf' ? 'Nome completo' : 'Razão social'}</Label>
+            <Label htmlFor="cli-nome" required>{v.tipo === 'pf' ? 'Nome completo' : 'Razão social'}</Label>
             <input id="cli-nome" required minLength={2} value={v.nome} onChange={(e) => set('nome', e.target.value)} className={fieldClass} />
           </div>
           <div>
@@ -104,11 +110,10 @@ export function ClienteForm({
             <input id="cli-doc-extra" value={v.doc_extra} onChange={(e) => set('doc_extra', e.target.value)} className={fieldClass} />
           </div>
         </div>
-      </fieldset>
+      </FormSection>
 
-      <fieldset>
-        <legend className="font-display text-lg font-semibold text-ink">Contato e endereço</legend>
-        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+      <FormSection title="Contato e endereço">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="cli-email">E-mail</Label>
             <input id="cli-email" type="email" value={v.email} onChange={(e) => set('email', e.target.value)} className={fieldClass} />
@@ -126,11 +131,10 @@ export function ClienteForm({
             <input id="cli-end" value={v.endereco} onChange={(e) => set('endereco', e.target.value)} className={fieldClass} />
           </div>
         </div>
-      </fieldset>
+      </FormSection>
 
-      <fieldset>
-        <legend className="font-display text-lg font-semibold text-ink">Honorários</legend>
-        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+      <FormSection title="Honorários">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="cli-hstatus">Status</Label>
             <select id="cli-hstatus" value={v.honorario_status} onChange={(e) => set('honorario_status', e.target.value)} className={fieldClass}>
@@ -157,25 +161,33 @@ export function ClienteForm({
             <input id="cli-hvenc" inputMode="numeric" value={v.honorario_vencimento} onChange={(e) => set('honorario_vencimento', e.target.value)} className={fieldClass} placeholder="10" />
           </div>
         </div>
-      </fieldset>
+      </FormSection>
 
-      <div>
-        <Label htmlFor="cli-obs">Observações</Label>
-        <textarea id="cli-obs" rows={3} value={v.observacoes} onChange={(e) => set('observacoes', e.target.value)} className={`${fieldClass} h-auto py-2.5`} />
-      </div>
+      <FormSection title="Observações" hint="Anotações internas sobre o cliente, visíveis só para a equipe.">
+        <textarea
+          id="cli-obs" aria-label="Observações" rows={3} value={v.observacoes}
+          onChange={(e) => set('observacoes', e.target.value)}
+          className={`${fieldClass} h-auto py-2.5`}
+        />
+      </FormSection>
 
       {shown && (
         <p role="alert" className="rounded-stamp border border-seal/30 bg-seal-wash px-3 py-2 text-sm text-seal-deep">
           {shown}
         </p>
       )}
-      <button
-        type="submit"
-        disabled={busy}
-        className="min-h-11 w-full rounded-stamp bg-brand px-4 text-[15px] font-semibold text-white transition-colors hover:bg-brand-deep disabled:opacity-60 sm:w-auto"
-      >
-        {busy ? 'Salvando…' : submitLabel}
-      </button>
+      <div className="flex flex-wrap items-center gap-4">
+        <button
+          type="submit"
+          disabled={busy}
+          className="min-h-11 w-full rounded-stamp bg-brand px-4 text-[15px] font-semibold text-white transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        >
+          {busy ? 'Salvando…' : submitLabel}
+        </button>
+        <a href={cancelHref} className="text-sm font-medium text-muted underline-offset-2 hover:text-ink hover:underline">
+          Cancelar
+        </a>
+      </div>
     </form>
   );
 }

@@ -39,7 +39,14 @@ export function ClienteEditar({ id }: { id: string }) {
         Voltar para a ficha
       </a>
       <h1 className="mt-2 font-display text-2xl font-semibold text-brand sm:text-3xl">Editar cliente</h1>
-      <ClienteForm initial={initial} submitLabel="Salvar alterações" busy={busy} error={error} onSubmit={onSubmit} />
+      <ClienteForm
+        initial={initial}
+        submitLabel="Salvar alterações"
+        busy={busy}
+        error={error}
+        cancelHref={`/clientes/${encodeURIComponent(id)}`}
+        onSubmit={onSubmit}
+      />
     </main>
   );
 }
