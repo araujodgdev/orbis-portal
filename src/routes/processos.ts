@@ -16,6 +16,14 @@ export const schema = z.object({
 
 export const processos = new Hono<{ Bindings: Env }>();
 
+const patchSchema = z.object({
+  fase: z.string().max(40).optional(),
+  responsavel: z.string().max(120).optional(),
+  area: z.string().max(40).optional(),
+  tribunal: z.string().max(20).optional(),
+  status: z.enum(['ativo', 'arquivado']).optional(),
+}).refine((b) => Object.keys(b).length > 0, 'Nada para atualizar');
+
 processos.get('/', async (c) => {
   const q = (c.req.query('q') ?? '').trim();
   const status = (c.req.query('status') ?? '').trim();
@@ -54,4 +62,21 @@ processos.get('/:id', async (c) => {
   const docs = await c.env.DB.prepare(`SELECT id, titulo, rascunho, created_at FROM documentos WHERE processo_id = ? ORDER BY created_at DESC LIMIT 100`).bind(id).all();
   await audit(c.env.DB, 'portal', 'view', 'processo', id);
   return c.json({ data: p, movimentacoes: movs.results, prazos: prz.results, documentos: docs.results });
+});
+
+processos.patch('/:id', async (c) => {
+  try {
+    const body = patchSchema.parse(await c.req.json());
+    const id = c.req.param('id');
+    const row = await c.env.DB.prepare(`SELECT id FROM processos WHERE id = ?`).bind(id).first();
+    if (!row) return c.json({ error: 'not_found', code: 'not_found', requestId: 'pro' }, 404);
+    const keys = Object.keys(body) as (keyof typeof body)[];
+    await c.env.DB.prepare(`UPDATE processos SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`)
+      .bind(...keys.map((k) => body[k]), id).run();
+    await audit(c.env.DB, 'portal', 'update', 'processo', id);
+    return c.json({ data: { id, ...body } });
+  } catch (e) {
+    if (e instanceof z.ZodError) return err(e, 'invalid_processo', 400);
+    return err(e);
+  }
 });

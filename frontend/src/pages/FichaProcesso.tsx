@@ -25,7 +25,13 @@ export function FichaProcesso({ id }: { id: string }) {
       <a href="/processos" className="text-sm text-brand underline-offset-2 hover:text-brand-deep hover:underline">
         Voltar para processos
       </a>
-      <h1 className="mt-2 font-display text-2xl font-semibold text-brand sm:text-3xl">{d.data.numero_cnj}</h1>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="font-display text-2xl font-semibold text-brand sm:text-3xl">{d.data.numero_cnj}</h1>
+        <a
+          href={`/processos/${encodeURIComponent(id)}/editar`}
+          className="inline-flex min-h-10 items-center justify-center rounded-stamp border border-line bg-sheet px-4 text-sm font-semibold text-brand transition-colors hover:border-brand/40 hover:text-brand-deep"
+        >Editar</a>
+      </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <section aria-label="Movimentações" className="rounded-sheet border border-line bg-sheet p-5 shadow-sheet sm:p-6">

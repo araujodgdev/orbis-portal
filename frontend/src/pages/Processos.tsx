@@ -50,7 +50,13 @@ export function Processos() {
   return (
     <main className="w-full">
       <h1 className="font-display text-2xl font-semibold text-brand sm:text-3xl">Processos</h1>
-      <p className="mt-1 mb-5 text-sm text-muted">Busque por CNJ ou nome do cliente.</p>
+      <div className="mt-1 mb-5 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted">Busque por CNJ ou nome do cliente.</p>
+        <a
+          href="/processos/novo"
+          className="inline-flex min-h-10 items-center justify-center rounded-stamp bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-deep"
+        >Novo processo</a>
+      </div>
       <form onSubmit={onSearch} className="mb-6 flex flex-col gap-2 lg:flex-row lg:items-center">
         <input
           className={`${fieldClass} lg:flex-1`}

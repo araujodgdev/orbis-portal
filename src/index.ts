@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { z } from 'zod';
 import { reqId, err } from './lib/errors';
 import { hashPass, requireAuth, audit } from './lib/auth';
 import { clientes } from './routes/clientes';
@@ -11,6 +12,7 @@ import { tarefas } from './routes/tarefas';
 import { jobs } from './routes/jobs';
 import { noticias } from './routes/noticias';
 import { csvImport } from './routes/csv';
+import { onboarding } from './routes/onboarding';
 import { tokens } from './routes/tokens';
 import { chat } from './routes/chat';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
@@ -36,6 +38,7 @@ app.route('/api/tarefas', tarefas as never);
 app.route('/api/jobs', jobs as never);
 app.route('/api/noticias', noticias as never);
 app.route('/api/import', csvImport as never);
+app.route('/api/onboarding', onboarding as never);
 app.route('/api/tokens', tokens as never);
 app.route('/api/chat', chat as never);
 app.all('/mcp', async (c) => {
@@ -49,10 +52,39 @@ app.all('/mcp', async (c) => {
   await server.connect(transport);
   return transport.handleRequest(c.req.raw);
 });
+app.post('/api/signup', async (c) => {
+  try {
+    const body = z.object({
+      email: z.string().email().max(160),
+      pass: z.string().min(8).max(128),
+    }).parse(await c.req.json());
+    const email = body.email.trim().toLowerCase();
+    const dupe = await c.env.DB.prepare(`SELECT id FROM users WHERE email = ?`).bind(email).first();
+    if (dupe) return c.json({ error: 'email_in_use', code: 'email_in_use', requestId: 'signup' }, 409);
+    const id = `usr_${Math.random().toString(36).slice(2, 10)}`;
+    await c.env.DB.prepare(`INSERT INTO users (id, email, pass_hash) VALUES (?, ?, ?)`)
+      .bind(id, email, await hashPass(body.pass)).run();
+    const sid = `ses_${Math.random().toString(36).slice(2, 12)}`;
+    const exp = new Date(Date.now() + 12 * 3600e3).toISOString();
+    await c.env.DB.prepare(`INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)`).bind(sid, id, exp).run();
+    await audit(c.env.DB, id, 'signup', 'user', id);
+    const secure = new URL(c.req.url).protocol === 'https:' ? '; Secure' : '';
+    return new Response(JSON.stringify({ ok: true, onboarding_done: false }), {
+      status: 201,
+      headers: {
+        'content-type': 'application/json',
+        'set-cookie': `orbis_session=${sid}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=43200`,
+      },
+    });
+  } catch (e) {
+    if (e instanceof z.ZodError) return err(e, 'invalid_signup', 400);
+    return err(e, 'signup_failed', 500);
+  }
+});
 app.post('/api/login', async (c) => {
   try {
     const { email, pass } = await c.req.json() as { email: string; pass: string };
-    const u = await c.env.DB.prepare(`SELECT id, pass_hash FROM users WHERE email = ?`).bind(email).first<{ id: string; pass_hash: string }>();
+    const u = await c.env.DB.prepare(`SELECT id, pass_hash, onboarding_done FROM users WHERE email = ?`).bind(email).first<{ id: string; pass_hash: string; onboarding_done: number }>();
     if (!u || (await hashPass(pass)) !== u.pass_hash) {
       return c.json({ error: 'invalid_credentials', code: 'invalid_credentials', requestId: 'login' }, 401);
     }
@@ -62,7 +94,7 @@ app.post('/api/login', async (c) => {
     await audit(c.env.DB, u.id, 'login', 'session', sid);
     // Secure só sob https (prod); em http local o navegador descartaria o cookie e o login nunca grudaria.
     const secure = new URL(c.req.url).protocol === 'https:' ? '; Secure' : '';
-    return new Response(JSON.stringify({ ok: true }), {
+    return new Response(JSON.stringify({ ok: true, onboarding_done: u.onboarding_done === 1 }), {
       headers: {
         'content-type': 'application/json',
         'set-cookie': `orbis_session=${sid}; HttpOnly${secure}; SameSite=Lax; Path=/; Max-Age=43200`,

@@ -60,7 +60,13 @@ export function Clientes() {
       <h1 className="font-display text-2xl font-semibold text-brand sm:text-3xl">
         Clientes{data !== null ? ` (${data.length})` : ''}
       </h1>
-      <p className="mt-1 mb-5 text-sm text-muted">Quem o escritório atende.</p>
+      <div className="mt-1 mb-5 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted">Quem o escritório atende.</p>
+        <a
+          href="/clientes/novo"
+          className="inline-flex min-h-10 items-center justify-center rounded-stamp bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-deep"
+        >Novo cliente</a>
+      </div>
 
       <form onSubmit={onSearch} className="mb-6 flex flex-col gap-2 lg:flex-row lg:items-center">
         <input
@@ -117,7 +123,11 @@ export function Clientes() {
             <tbody className="divide-y divide-line">
               {data.map((c) => (
                 <tr key={c.id} className="transition-colors hover:bg-paper">
-                  <td className="px-4 py-3 font-medium text-ink">{c.nome}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <a href={`/clientes/${encodeURIComponent(c.id)}`} className="text-brand hover:text-brand-deep hover:underline">
+                      {c.nome}
+                    </a>
+                  </td>
                   <td className="px-4 py-3 text-ink/80">{c.contato || '—'}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-ink/80">{c.cpf_cnpj || '—'}</td>
                   <td className="px-4 py-3">

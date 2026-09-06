@@ -6,6 +6,13 @@ import { Clientes } from './pages/Clientes';
 import { Noticias } from './pages/Noticias';
 import { NoticiaDetalhe } from './pages/NoticiaDetalhe';
 import { Login } from './pages/Login';
+import { Cadastro } from './pages/Cadastro';
+import { Onboarding } from './pages/Onboarding';
+import { ClienteNovo } from './pages/ClienteNovo';
+import { ClienteFicha } from './pages/ClienteFicha';
+import { ClienteEditar } from './pages/ClienteEditar';
+import { ProcessoNovo } from './pages/ProcessoNovo';
+import { ProcessoEditar } from './pages/ProcessoEditar';
 import { Chat } from './pages/Chat';
 import { ChatWidget } from './components/ChatWidget';
 import { Logo } from './components/Logo';
@@ -54,14 +61,26 @@ export function App() {
   const path = window.location.pathname;
   if (path === '/login') return <Login />;
   if (path === '/chat') return <Chat />;
+  if (path === '/cadastro') return <Cadastro />;
+  if (path === '/boas-vindas') return <Onboarding />;
+  if (path === '/clientes/novo') return <ClienteNovo />;
+  if (path === '/processos/novo') return <ProcessoNovo />;
+  const cliEdit = path.match(/^\/clientes\/([^/]+)\/editar$/);
+  const procEdit = path.match(/^\/processos\/([^/]+)\/editar$/);
+  const cliFicha = path.match(/^\/clientes\/([^/]+)$/);
   const m = path.match(/^\/processos\/([^/]+)/);
   const nm = path.match(/^\/noticias\/([^/]+)/);
-  const page = m
+  const page = procEdit
+    ? <ProcessoEditar id={decodeURIComponent(procEdit[1])} />
+    : cliEdit
+    ? <ClienteEditar id={decodeURIComponent(cliEdit[1])} />
+    : m
     ? <FichaProcesso id={decodeURIComponent(m[1])} />
     : nm
     ? <NoticiaDetalhe id={decodeURIComponent(nm[1])} />
     : path === '/processos' ? <Processos />
     : path === '/clientes' ? <Clientes />
+    : cliFicha ? <ClienteFicha id={decodeURIComponent(cliFicha[1])} />
     : path === '/noticias' ? <Noticias />
     : <Dashboard />;
   return (
@@ -121,7 +140,7 @@ export function App() {
             Sair
           </button>
         </header>
-        <div className="mx-auto w-full max-w-6xl px-4 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-10 lg:pb-16">
+        <div className="mx-auto w-full max-w-6xl px-5 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-10 lg:pb-16">
           {page}
         </div>
       </div>

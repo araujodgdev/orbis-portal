@@ -6,6 +6,14 @@ import { err } from '../lib/errors';
 import type { Env } from '../index';
 
 export const tarefas = new Hono<{ Bindings: Env }>();
+
+const patchSchema = z.object({
+  titulo: z.string().min(2).max(200).optional(),
+  responsavel: z.string().max(120).optional(),
+  vencimento: z.string().min(8).max(10).optional(),
+  status: z.enum(['aberta', 'concluida']).optional(),
+}).refine((b) => Object.keys(b).length > 0, 'Nada para atualizar');
+
 export const schema = z.object({
   processo_id: z.string().min(3),
   titulo: z.string().min(2).max(200),
@@ -30,4 +38,30 @@ tarefas.post('/', async (c) => {
     if (e instanceof z.ZodError) return err(e, 'invalid_tarefa', 400);
     return err(e);
   }
+});
+
+tarefas.patch('/:id', async (c) => {
+  try {
+    const body = patchSchema.parse(await c.req.json());
+    const id = c.req.param('id');
+    const row = await c.env.DB.prepare(`SELECT id FROM tarefas WHERE id = ?`).bind(id).first();
+    if (!row) return c.json({ error: 'not_found', code: 'not_found', requestId: 'tar' }, 404);
+    const keys = Object.keys(body) as (keyof typeof body)[];
+    await c.env.DB.prepare(`UPDATE tarefas SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`)
+      .bind(...keys.map((k) => body[k]), id).run();
+    await audit(c.env.DB, 'portal', 'update', 'tarefa', id);
+    return c.json({ data: { id, ...body } });
+  } catch (e) {
+    if (e instanceof z.ZodError) return err(e, 'invalid_tarefa', 400);
+    return err(e);
+  }
+});
+
+tarefas.delete('/:id', async (c) => {
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare(`SELECT id FROM tarefas WHERE id = ?`).bind(id).first();
+  if (!row) return c.json({ error: 'not_found', code: 'not_found', requestId: 'tar' }, 404);
+  await c.env.DB.prepare(`DELETE FROM tarefas WHERE id = ?`).bind(id).run();
+  await audit(c.env.DB, 'portal', 'delete', 'tarefa', id);
+  return c.json({ ok: true });
 });

@@ -7,6 +7,23 @@ import type { Env } from '../index';
 
 export const prazos = new Hono<{ Bindings: Env }>();
 export const schema = z.object({ data: z.string().refine(isDateYYYYMMDD, 'Data inválida. Use AAAA-MM-DD'), tipo: z.string().max(40).default('manifestacao') });
+const STATUS = ['aberto', 'cumprido', 'perdido'] as const;
+
+prazos.get('/', async (c) => {
+  const status = (c.req.query('status') ?? '').trim();
+  const pid = (c.req.query('processo_id') ?? '').trim();
+  if (status && !(STATUS as readonly string[]).includes(status)) {
+    return c.json({ error: 'invalid_status', code: 'invalid_status', requestId: 'prz' }, 400);
+  }
+  const conds: string[] = [];
+  const args: string[] = [];
+  if (status) { conds.push(`status = ?`); args.push(status); }
+  if (pid) { conds.push(`processo_id = ?`); args.push(pid); }
+  const rows = await c.env.DB.prepare(
+    `SELECT * FROM prazos ${conds.length > 0 ? `WHERE ${conds.join(' AND ')}` : ''} ORDER BY data ASC LIMIT 100`
+  ).bind(...args).all();
+  return c.json({ data: rows.results });
+});
 
 prazos.post('/processo/:pid', async (c) => {
   try {
@@ -24,7 +41,7 @@ prazos.post('/processo/:pid', async (c) => {
 
 prazos.patch('/:id', async (c) => {
   const { status } = await c.req.json() as { status: string };
-  if (!['aberto', 'cumprido', 'perdido'].includes(status)) return c.json({ error: 'invalid_status', code: 'invalid_status', requestId: 'prz' }, 400);
+  if (!(STATUS as readonly string[]).includes(status)) return c.json({ error: 'invalid_status', code: 'invalid_status', requestId: 'prz' }, 400);
   await c.env.DB.prepare(`UPDATE prazos SET status = ? WHERE id = ?`).bind(status, c.req.param('id')).run();
   return c.json({ ok: true });
 });
