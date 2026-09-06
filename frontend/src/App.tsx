@@ -6,6 +6,7 @@ import { Clientes } from './pages/Clientes';
 import { Noticias } from './pages/Noticias';
 import { NoticiaDetalhe } from './pages/NoticiaDetalhe';
 import { Login } from './pages/Login';
+import { Chat } from './pages/Chat';
 import { Logo } from './components/Logo';
 
 const NAV = [
@@ -51,6 +52,7 @@ function isActive(path: string, href: string): boolean {
 export function App() {
   const path = window.location.pathname;
   if (path === '/login') return <Login />;
+  if (path === '/chat') return <Chat />;
   const m = path.match(/^\/processos\/([^/]+)/);
   const nm = path.match(/^\/noticias\/([^/]+)/);
   const page = m
