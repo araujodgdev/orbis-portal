@@ -12,6 +12,7 @@ import { jobs } from './routes/jobs';
 import { noticias } from './routes/noticias';
 import { csvImport } from './routes/csv';
 import { tokens } from './routes/tokens';
+import { chat } from './routes/chat';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { buildMcpServer } from './mcp/server';
 import { verifyBearer } from './mcp/auth';
@@ -36,6 +37,7 @@ app.route('/api/jobs', jobs as never);
 app.route('/api/noticias', noticias as never);
 app.route('/api/import', csvImport as never);
 app.route('/api/tokens', tokens as never);
+app.route('/api/chat', chat as never);
 app.all('/mcp', async (c) => {
   if (c.req.method !== 'POST') {
     return Response.json({ jsonrpc: '2.0', error: { code: -32000, message: 'Método não permitido.' }, id: null }, { status: 405 });
