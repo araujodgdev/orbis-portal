@@ -5,8 +5,8 @@
   "compatibility_date": "2026-09-01",
   "account_id": "d368028981eb36694bcf42848721826a",
   "assets": { "directory": "./frontend/dist", "binding": "ASSETS", "not_found_handling": "single-page-application" },
-  "d1_databases": [{ "binding": "DB", "database_name": "orbis_db", "database_id": "local-dev", "migrations_dir": "migrations" }],
-  "r2_buckets": [{ "binding": "DOCS", "bucket_name": "orbis-docs" }],
+  "d1_databases": [{ "binding": "DB", "database_name": "orbis-db", "database_id": "f140f399-139f-4d93-8416-622e1a67611b", "migrations_dir": "migrations" }],
+  "r2_buckets": [{ "binding": "DOCS", "bucket_name": "orbis-documents" }],
   "vars": { "ALLOWED_ORIGIN": "http://localhost:8787" },
   "env": {
     "staging": {
