@@ -66,6 +66,9 @@ UI (cookie de sessão):
 - `GET /api/chat/sessions/:id/messages` → mensagens em ordem; 404 se de outro.
 - `POST /api/chat/sessions/:id/messages` `{ texto }` (1–8000 chars) → 201,
   grava `user`/`pending`; 404 se a sessão é de outro usuário.
+- `POST /api/chat/sessions/:id/messages/:mid/retry` → flipa `error → pending`
+  (só mensagem `user` em `error`); 404 se não existe, é de outro usuário ou
+  não está em `error`. Sem duplicar a mensagem.
 
 Adapter (só `Authorization: Bearer`, cookie nunca autentica `/api/chat/outbox`
 nem `/api/chat/inbox`):
