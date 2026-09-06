@@ -15,7 +15,7 @@ export async function audit(
 }
 
 export async function requireAuth(c: Context<{ Bindings: { DB: D1Database } }>, next: Next) {
-  if (c.req.path === '/api/health' || c.req.path === '/api/login') return next();
+  if (['/api/health', '/api/login', '/api/signup', '/api/chat/outbox', '/api/chat/inbox'].includes(c.req.path)) return next();
   const db = (c.env as { DB?: D1Database } | undefined)?.DB;
   if (!db) return c.json({ error: 'unauthorized', code: 'unauthorized', requestId: 'auth' }, 401);
   const cookie = c.req.header('cookie') ?? '';
