@@ -64,6 +64,10 @@ chat.patch('/sessions/:id', async (c) => {
 });
 
 chat.delete('/sessions/:id', async (c) => {
+  const s = await ownSession(c.env.DB, c.req.param('id'), actorId(c));
+  if (!s) return notFound();
+  await c.env.DB.prepare(`DELETE FROM chat_messages WHERE session_id = ?`)
+    .bind(c.req.param('id')).run();
   const r = await c.env.DB.prepare(`DELETE FROM chat_sessions WHERE id = ? AND user_id = ?`)
     .bind(c.req.param('id'), actorId(c)).run() as unknown as { meta: { changes: number } };
   if (!r.meta?.changes) return notFound();

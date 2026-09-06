@@ -299,3 +299,30 @@ describe('PATCH /api/chat/sessions/:id titulo', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('DELETE /api/chat/sessions/:id removes messages', () => {
+  it('deletes chat_messages for the session before deleting the session', async () => {
+    const { db, seen, bound } = makeChatDb();
+    const res = await app.request('/api/chat/sessions/cht_1', {
+      method: 'DELETE', headers: authed,
+    }, { DB: db });
+    expect(res.status).toBe(200);
+    const msgDel = bound.find((b) => /DELETE FROM chat_messages/.test(b.sql));
+    expect(msgDel).toBeDefined();
+    expect(msgDel!.args).toEqual(['cht_1']);
+    const msgIdx = seen.findIndex((s) => /DELETE FROM chat_messages/.test(s));
+    const sesIdx = seen.findIndex((s) => /DELETE FROM chat_sessions/.test(s));
+    expect(msgIdx).toBeGreaterThanOrEqual(0);
+    expect(sesIdx).toBeGreaterThanOrEqual(0);
+    expect(msgIdx).toBeLessThan(sesIdx);
+  });
+  it('404s on another user session and deletes nothing', async () => {
+    const { db, seen } = makeChatDb({ sessionOwner: null });
+    const res = await app.request('/api/chat/sessions/cht_x', {
+      method: 'DELETE', headers: authed,
+    }, { DB: db });
+    expect(res.status).toBe(404);
+    expect(seen.some((s) => /DELETE FROM chat_messages/.test(s))).toBe(false);
+    expect(seen.some((s) => /DELETE FROM chat_sessions/.test(s))).toBe(false);
+  });
+});
