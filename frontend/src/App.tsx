@@ -7,6 +7,7 @@ import { Noticias } from './pages/Noticias';
 import { NoticiaDetalhe } from './pages/NoticiaDetalhe';
 import { Login } from './pages/Login';
 import { Chat } from './pages/Chat';
+import { ChatWidget } from './components/ChatWidget';
 import { Logo } from './components/Logo';
 
 const NAV = [
@@ -150,6 +151,7 @@ export function App() {
           })}
         </div>
       </nav>
+      <ChatWidget />
     </div>
   );
 }
