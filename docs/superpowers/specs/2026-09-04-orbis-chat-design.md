@@ -18,10 +18,11 @@ O Orbis nunca empurra nada para o Hermes. Todo o fluxo nasce de poll:
 4. `send()` do adapter posta a resposta em `POST /api/chat/inbox`.
 5. UI (poll 2,5s com chat aberto, pausado com aba oculta) exibe.
 
-Anti-duplicidade: a outbox flipa `pending → claimed` com
-`UPDATE … WHERE estado='pending'` — atômico, só um gateway recolhe cada
-mensagem. Claim órfão (adapter morreu no meio): volta a ser recolhível após
-10 minutos (`claimed_at`).
+Anti-duplicidade: a outbox executa um único `UPDATE … WHERE id IN (SELECT …
+LIMIT 20) RETURNING` — claim atômico, só um gateway recolhe cada mensagem
+(a resposta é o `RETURNING`; quem chegou depois recebe `[]` ou o restante).
+Claim órfão (adapter morreu no meio): volta a ser recolhível após
+10 minutos (`claimed_at`, guarda dentro do próprio predicado do `UPDATE`).
 
 ## Banco — migration `0007_chat.sql`
 
@@ -66,17 +67,22 @@ UI (cookie de sessão):
 - `GET /api/chat/sessions/:id/messages` → mensagens em ordem; 404 se de outro.
 - `POST /api/chat/sessions/:id/messages` `{ texto }` (1–8000 chars) → 201,
   grava `user`/`pending`; 404 se a sessão é de outro usuário.
-- `POST /api/chat/sessions/:id/messages/:mid/retry` → flipa `error → pending`
-  (só mensagem `user` em `error`); 404 se não existe, é de outro usuário ou
-  não está em `error`. Sem duplicar a mensagem.
+- `POST /api/chat/sessions/:id/messages/:mid/retry` → re-enfileira sem
+  duplicar linhas: o alvo precisa satisfazer `id` + `session_id` da URL +
+  `estado='error'` (404 caso contrário, após o gate de sessão própria). Linha
+  `user` em erro volta para `pending`; aviso de erro do agente marca o aviso
+  como `delivered` e re-enfileira (`claimed → pending`) a última mensagem
+  `user` `claimed` com `created_at` anterior ao aviso (se houver).
 
-Adapter (só `Authorization: Bearer`, cookie nunca autentica `/api/chat/outbox`
-nem `/api/chat/inbox`):
+Adapter (só `Authorization: Bearer`, cookie nunca autentica — caminhos exatos,
+sem barra final: `GET /api/chat/outbox`, `POST /api/chat/inbox`):
 
 - `GET /api/chat/outbox` → `pending` (ou `claimed` há +10min) **só das sessões
   do dono do token**, flipando para `claimed` + `claimed_at`. Vazio → `[]`.
-- `POST /api/chat/inbox` `{ session_id, texto, reply_to? }` → insere
-  `agent`/`delivered`; 404 se a sessão não é do dono do token.
+- `POST /api/chat/inbox` `{ session_id, texto, reply_to?, estado? }` →
+  insere `agent` com `estado` (`delivered` default, ou `error` para aviso de
+  falha); `reply_to` aceito mas ignorado na v1 (sem coluna); 404 se a sessão
+  não é do dono do token.
 
 ## UI — widget + página
 
@@ -96,8 +102,11 @@ nem `/api/chat/inbox`):
 
 - Adapter fora do ar: tudo aguarda em `pending`; UI mostra "aguardando
   agente". Volta sozinho, sem ação do usuário.
-- Falha do agente: adapter posta na inbox com `estado=error`; UI mostra texto
-  amigável PT-BR, nunca stack trace nem JSON-RPC cru.
+- Falha do agente: adapter posta na inbox com `estado='error'` (linha de aviso
+  autorada pelo agente, texto amigável PT-BR, nunca stack trace nem JSON-RPC
+  cru). Retry nunca duplica linhas: re-enfileira a mensagem `user` causadora
+  (`error → pending`, ou `claimed → pending` quando o alvo é o aviso do
+  agente) e arquiva o aviso como `delivered`.
 - Auditoria via `audit()`: `chat_message` (UI envia), `chat_claim` (adapter
   recolhe), `chat_reply` (adapter responde); actor = usuário dono da sessão
   (na UI) ou do token (no adapter).

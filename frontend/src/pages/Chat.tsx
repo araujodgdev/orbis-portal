@@ -40,10 +40,15 @@ export function Chat() {
   }, [activeId, loadMsgs]);
 
   async function newChat() {
-    const r = await api<{ data: Session }>('/api/chat/sessions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
-    setSessions((s) => [r.data, ...s]);
-    setActiveId(r.data.id);
-    setMsgs([]);
+    setError('');
+    try {
+      const r = await api<{ data: Session }>('/api/chat/sessions', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+      setSessions((s) => [r.data, ...s]);
+      setActiveId(r.data.id);
+      setMsgs([]);
+    } catch {
+      setError('Não foi possível criar o chat. Tente de novo.');
+    }
   }
 
   async function send(e: FormEvent) {
@@ -77,20 +82,30 @@ export function Chat() {
 
   async function removeSession() {
     if (!activeId || !window.confirm('Excluir este chat e todas as mensagens?')) return;
-    await api(`/api/chat/sessions/${encodeURIComponent(activeId)}`, { method: 'DELETE' });
-    setSessions((s) => s.filter((x) => x.id !== activeId));
-    setActiveId('');
-    setMsgs([]);
+    setError('');
+    try {
+      await api(`/api/chat/sessions/${encodeURIComponent(activeId)}`, { method: 'DELETE' });
+      setSessions((s) => s.filter((x) => x.id !== activeId));
+      setActiveId('');
+      setMsgs([]);
+    } catch {
+      setError('Não foi possível excluir o chat. Tente de novo.');
+    }
   }
 
   async function rename() {
     const t = newTitle.trim();
     if (!t || !activeId) { setRenaming(false); return; }
-    await api(`/api/chat/sessions/${encodeURIComponent(activeId)}`, {
-      method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ titulo: t }),
-    });
-    setSessions((s) => s.map((x) => (x.id === activeId ? { ...x, titulo: t } : x)));
-    setRenaming(false);
+    setError('');
+    try {
+      await api(`/api/chat/sessions/${encodeURIComponent(activeId)}`, {
+        method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ titulo: t }),
+      });
+      setSessions((s) => s.map((x) => (x.id === activeId ? { ...x, titulo: t } : x)));
+      setRenaming(false);
+    } catch {
+      setError('Não foi possível renomear o chat. Tente de novo.');
+    }
   }
 
   const active = sessions.find((s) => s.id === activeId);
@@ -99,9 +114,14 @@ export function Chat() {
     <main className="font-sans text-ink">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-semibold text-brand sm:text-3xl">Chat</h1>
-        <button type="button" onClick={newChat} className="min-h-11 rounded-stamp bg-brand px-4 text-[15px] font-semibold text-white hover:bg-brand-deep">
-          Novo chat
-        </button>
+        <div className="flex items-center gap-2">
+          <a href="/" className="inline-flex min-h-11 items-center rounded-stamp px-4 text-[15px] font-semibold text-brand hover:bg-sheet">
+            Início
+          </a>
+          <button type="button" onClick={newChat} className="min-h-11 rounded-stamp bg-brand px-4 text-[15px] font-semibold text-white hover:bg-brand-deep">
+            Novo chat
+          </button>
+        </div>
       </div>
       <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr]">
         <section aria-label="Conversas" className="flex max-h-64 flex-col gap-1 overflow-y-auto lg:max-h-none">
